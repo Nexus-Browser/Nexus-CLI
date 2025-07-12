@@ -1,0 +1,13 @@
+torch>=2.0.0
+tokenizers>=0.13.0
+transformers>=4.30.0
+datasets>=2.12.0
+numpy>=1.24.0
+rich>=13.0.0
+click>=8.1.0
+pygments>=2.15.0
+colorama>=0.4.6
+tqdm>=4.65.0
+accelerate>=0.20.0
+peft>=0.4.0
+bitsandbytes>=0.41.0
