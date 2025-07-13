@@ -20,6 +20,7 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
@@ -49,7 +50,6 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-cover/
 
 # Translations
 *.mo
@@ -72,7 +72,6 @@ instance/
 docs/_build/
 
 # PyBuilder
-.pybuilder/
 target/
 
 # Jupyter Notebook
@@ -83,9 +82,7 @@ profile_default/
 ipython_config.py
 
 # pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+.python-version
 
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
@@ -94,22 +91,7 @@ ipython_config.py
 #   install all needed dependencies.
 #Pipfile.lock
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
-.pdm.toml
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
 
 # Celery stuff
@@ -146,44 +128,137 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be added to the global gitignore or merged into this project gitignore.  For a PyCharm
-#  project, it is recommended to include the following files:
-#  .idea/
-#  *.iml
-#  *.ipr
-#  *.iws
-
-# VS Code
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Model files and training data
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
 model/nexus_model/
-model/*.pt
-model/*.pth
-model/*.bin
-model/*.safetensors
-model/checkpoint-*/
-model/logs/
+*.bin
+*.safetensors
 *.ckpt
+*.pth
+*.pt
+*.h5
+*.hdf5
+*.pkl
+*.pickle
 
 # Training data
 data/training_data/
-data/*.json
-data/*.csv
-data/*.txt
+data/datasets/
+*.jsonl
+*.json.gz
 
-# Memory and cache files
+# Logs
+logs/
+*.log
+
+# Memory
 memory/
-*.cache
+*.memory
+
+# Temporary files
+temp/
+tmp/
 *.tmp
+
+# API Configuration (keep private)
+model/api_config.json
+.env
+.env.local
+.env.production
+
+# Model checkpoints and weights
+checkpoints/
+weights/
+models/*.bin
+models/*.safetensors
+models/*.ckpt
+models/*.pth
+models/*.pt
+
+# Tokenizer files
+tokenizer/*.model
+tokenizer/*.vocab
+tokenizer/*.json
+
+# Dataset files
+*.csv
+*.tsv
+*.parquet
+*.arrow
+
+# Cache directories
+.cache/
+cache/
+__pycache__/
+*.pyc
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration files with sensitive data
+config.json
+secrets.json
+credentials.json
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # OS generated files
 .DS_Store
@@ -194,46 +269,17 @@ memory/
 ehthumbs.db
 Thumbs.db
 
-# IDE files
-*.swp
-*.swo
-*~
-
-# Logs
-*.log
-logs/
-
-# Temporary files
-temp/
-tmp/
-*.tmp
-
-# Configuration files with sensitive data
-config.json
-secrets.json
+# API keys and sensitive configuration
+model/api_config.json
+.env
 .env.local
 .env.production
+secrets.json
+credentials.json
+config.json 
 
-# Large files that shouldn't be in git
-*.zip
-*.tar.gz
-*.rar
-*.7z
-
-# Node.js (if using any JS tools)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Rust (if using any Rust tools)
-target/
-Cargo.lock
-
-# Go (if using any Go tools)
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-go.sum 
+model_cache/
+venv/
+__pycache__/
+*.pyc
+.DS_Store 

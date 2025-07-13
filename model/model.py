@@ -29,10 +29,10 @@ class NexusGPT(nn.Module):
         pos_emb = self.pos_embedding[:, :T, :]                # [1, T, C]
         x = tok_emb + pos_emb                                 # [B, T, C]
 
-        x = x.transpose(0, 1)  # [T, B, C] for nn.Transformer
+        x = x.transpose(0, 1)                                 # [T, B, C] for nn.Transformer
         for block in self.transformer_blocks:
-            x = block(x)                                       # [T, B, C]
-        x = x.transpose(0, 1)                                  # back to [B, T, C]
+            x = block(x)                                      # [T, B, C]
+        x = x.transpose(0, 1)                                 # back to [B, T, C]
 
         x = self.ln_f(x)
         logits = self.head(x)

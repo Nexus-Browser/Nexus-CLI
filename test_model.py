@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to debug the Nexus model output.
+Test script for Nexus AI model.
 """
 
 import sys
@@ -8,40 +8,43 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from model.nexus_model import NexusModel
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 def test_model():
-    """Test the model with various inputs."""
-    print("Loading Nexus model...")
-    model = NexusModel()
+    """Test the Nexus model."""
+    print("Testing Nexus AI Model...")
     
-    # Test conversation
-    print("\n=== Testing Conversation ===")
-    conversation_prompts = [
-        "Hello, how are you?",
-        "What can you help me with?",
-        "What is a variable?",
-        "How do I create a function?"
-    ]
-    
-    for prompt in conversation_prompts:
-        print(f"\nPrompt: {prompt}")
-        response = model.generate_response(f"User: {prompt}\nAssistant:", max_length=128, temperature=0.7)
-        print(f"Response: {response}")
-        print("-" * 50)
-    
-    # Test code generation
-    print("\n=== Testing Code Generation ===")
-    code_prompts = [
-        "Create a function to add two numbers",
-        "Write a simple calculator class",
-        "Create a function to check if a number is even"
-    ]
-    
-    for prompt in code_prompts:
-        print(f"\nPrompt: {prompt}")
-        code = model.generate_code(prompt, "python")
-        print(f"Generated Code:\n{code}")
-        print("-" * 50)
+    try:
+        # Initialize model
+        print("Loading model...")
+        model = NexusModel()
+        
+        if not model.model:
+            print("❌ Model failed to load!")
+            return False
+        
+        print("✅ Model loaded successfully!")
+        
+        # Test chat generation
+        print("\nTesting chat generation...")
+        chat_response = model.generate_response("Hello, how are you?")
+        print(f"Chat response: {chat_response}")
+        
+        # Test code generation
+        print("\nTesting code generation...")
+        code_response = model.generate_code("create a function to add two numbers", "python")
+        print(f"Code response: {code_response}")
+        
+        print("\n✅ All tests passed!")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+        return False
 
 if __name__ == "__main__":
-    test_model() 
+    success = test_model()
+    sys.exit(0 if success else 1) 

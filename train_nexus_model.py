@@ -264,7 +264,7 @@ def train_model(
     )
     
     # Setup training arguments optimized for CPU speed
-    training_args = TrainingArguments(
+training_args = TrainingArguments(
         output_dir=output_dir,
         overwrite_output_dir=True,
         num_train_epochs=epochs,
@@ -289,13 +289,13 @@ def train_model(
     )
     
     # Create trainer
-    trainer = Trainer(
-        model=model,
-        args=training_args,
+trainer = Trainer(
+    model=model,
+    args=training_args,
         data_collator=data_collator,
         train_dataset=dataset,
-    )
-    
+)
+
     # Train the model
     logging.info("Starting training...")
     print(f"Training on {len(dataset)} examples for {epochs} epochs")

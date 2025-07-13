@@ -4,46 +4,64 @@ Nexus CLI - A custom AI-powered coding assistant
 Similar to Gemini CLI but using a custom trained model
 """
 
+import argparse
+import logging
 import os
 import sys
-import json
-import logging
-import argparse
+import subprocess
+import re
 from pathlib import Path
 from typing import List, Dict, Optional, Any
-import re # Added for regex in _handle_extract_functions and _handle_extract_classes
-
-# Rich for beautiful CLI output
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
 from rich.table import Table
 from rich.syntax import Syntax
 from rich.tree import Tree
-from rich import print as rprint
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.live import Live
+from rich.layout import Layout
+from rich.text import Text
+from rich.align import Align
+import json
+import time
+from datetime import datetime
 
-# Import our custom modules
+# Import our modules
 from model.nexus_model import NexusModel
 from tools import FileTools, CodeTools, ProjectTools, MemoryTools
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# ANSI colors for the Nexus logo
+# Rich for beautiful CLI output
 BLUE = "\033[94m"
-CYAN = "\033[96m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-RED = "\033[91m"
 RESET = "\033[0m"
 
-class NexusCLI:
+class IntelligentNexusCLI:
+    """Intelligent Nexus CLI with modern features and context awareness."""
+    
     def __init__(self):
         self.console = Console()
-        self.model = None
+        self.model_available = False
+        try:
+            self.model = NexusModel()
+            # Check if model and pipeline are loaded
+            if (
+                hasattr(self.model, 'llm') and 
+                hasattr(self.model.llm, 'model') and self.model.llm.model is not None and
+                hasattr(self.model.llm, 'pipe') and self.model.llm.pipe is not None
+            ):
+                self.model_available = True
+            else:
+                self.console.print("[red]Error: Model or pipeline not loaded properly.[/red]")
+                self.model_available = False
+        except Exception as e:
+            self.console.print(f"[red]Error loading model: {e}\nFalling back to basic mode...[/red]")
+            self.model = None
+            self.model_available = False
         self.memory = MemoryTools()
         self.current_project = None
         self.conversation_history = []
+        self.command_history = []
+        self.context = {}
         
         # Initialize tools
         self.file_tools = FileTools()
@@ -55,17 +73,54 @@ class NexusCLI:
         
         # Find current project
         self.current_project = self.project_tools.find_project_root()
+        
+        # Load context
+        self._load_context()
     
     def _load_model(self):
-        """Load the Nexus AI model."""
-        try:
-            self.console.print("[yellow]Loading Nexus AI model...[/yellow]")
-            self.model = NexusModel()
-            self.console.print("[green]✓ Model loaded successfully![/green]")
-        except Exception as e:
-            self.console.print(f"[red]Error loading model: {e}[/red]")
-            self.console.print("[yellow]Falling back to basic mode...[/yellow]")
-            self.model = None
+        """Load the Nexus AI model with progress indication."""
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=self.console
+        ) as progress:
+            task = progress.add_task("Loading Nexus AI model...", total=None)
+            try:
+                self.model = NexusModel()
+                progress.update(task, description="✓ Model loaded successfully!")
+                time.sleep(0.5)
+            except Exception as e:
+                self.console.print(f"[red]Error loading model: {e}[/red]")
+                self.console.print("[yellow]Falling back to basic mode...[/yellow]")
+                self.model = None
+    
+    def _load_context(self):
+        """Load context from project and environment."""
+        self.context = {
+            "project_root": self.current_project,
+            "current_dir": os.getcwd(),
+            "python_version": sys.version_info,
+            "platform": sys.platform,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Load project-specific context
+        if self.current_project:
+            self._load_project_context()
+    
+    def _load_project_context(self):
+        """Load project-specific context."""
+        project_files = [
+            "requirements.txt", "pyproject.toml", "package.json", 
+            "Cargo.toml", "go.mod", "README.md", ".gitignore"
+        ]
+        
+        for file in project_files:
+            file_path = os.path.join(self.current_project, file)
+            if os.path.exists(file_path):
+                self.context[f"has_{file}"] = True
+                if file in ["requirements.txt", "package.json"]:
+                    self.context[f"{file}_content"] = self.file_tools.read_file(file_path)
     
     def get_nexus_logo(self) -> str:
         """Get the colored Nexus logo."""
@@ -84,48 +139,65 @@ class NexusCLI:
         return f"{BLUE}{nexus_ascii}{RESET}"
     
     def show_welcome(self):
-        """Display welcome message and help."""
+        """Display intelligent welcome message."""
         self.console.print(self.get_nexus_logo())
-        self.console.print(Panel.fit(
-            "[bold blue]Nexus CLI - Your Custom AI Coding Assistant[/bold blue]\n"
-            "[dim]Powered by a custom-trained AI model[/dim]",
-            border_style="blue"
-        ))
         
-        # Show current project info
+        # Create layout for welcome
+        layout = Layout()
+        layout.split_column(
+            Layout(Panel.fit(
+                "[bold blue]Nexus CLI - Intelligent AI Coding Assistant[/bold blue]\n"
+                "[dim]Powered by advanced code generation and analysis[/dim]",
+                border_style="blue"
+            ), name="header"),
+            Layout(name="body")
+        )
+        
+        # Add project info
         if self.current_project:
-            self.console.print(f"[green]Current project: {self.current_project}[/green]")
+            project_info = f"[green]Project: {self.current_project}[/green]"
+            if self.context.get("has_requirements.txt"):
+                project_info += " [yellow]📦 Python[/yellow]"
+            if self.context.get("has_package.json"):
+                project_info += " [yellow]📦 Node.js[/yellow]"
+            if self.context.get("has_Cargo.toml"):
+                project_info += " [yellow]📦 Rust[/yellow]"
+            if self.context.get("has_go.mod"):
+                project_info += " [yellow]📦 Go[/yellow]"
+            
+            layout["body"].update(Panel(project_info, border_style="green"))
         
+        self.console.print(layout)
         self.show_help()
     
     def show_help(self):
-        """Display help information."""
+        """Display intelligent help information."""
         help_text = """
 [bold]Available Commands:[/bold]
 
 [cyan]Code Generation:[/cyan]
-  • [code]code <instruction>[/code] - Generate code from natural language
+  • [code]code <instruction>[/code] - Generate intelligent code from natural language
   • [code]code <language> <instruction>[/code] - Generate code in specific language
   
 [cyan]File Operations:[/cyan]
-  • [code]read <file>[/code] - Read and display file contents
+  • [code]read <file>[/code] - Read and syntax-highlight file contents
   • [code]write <file> <content>[/code] - Write content to file
-  • [code]list[/code] - List files in current directory
-  • [code]tree[/code] - Show project structure
+  • [code]list [directory][/code] - List files with intelligent formatting
+  • [code]tree [directory][/code] - Show project structure tree
   
 [cyan]Code Analysis:[/cyan]
-  • [code]analyze <file>[/code] - Analyze code structure
-  • [code]functions <file>[/code] - Extract functions from file
-  • [code]classes <file>[/code] - Extract classes from file
+  • [code]analyze <file>[/code] - Intelligent code analysis with AST parsing
+  • [code]functions <file>[/code] - Extract and analyze functions
+  • [code]classes <file>[/code] - Extract and analyze classes
   
 [cyan]Project Management:[/cyan]
-  • [code]run <command>[/code] - Run shell command
-  • [code]test[/code] - Run project tests
-  • [code]install[/code] - Install dependencies
+  • [code]run <command>[/code] - Run shell command with output capture
+  • [code]test[/code] - Intelligent test detection and execution
+  • [code]install[/code] - Smart dependency installation
   
 [cyan]Conversation:[/cyan]
-  • [code]chat[/code] - Start conversation mode
-  • [code]history[/code] - Show conversation history
+  • [code]chat[/code] - Start intelligent conversation mode
+  • [code]history[/code] - Show conversation and command history
   • [code]clear[/code] - Clear conversation history
   
 [cyan]System:[/cyan]
@@ -133,17 +205,46 @@ class NexusCLI:
   • [code]exit[/code] - Exit Nexus CLI
   • [code]train[/code] - Train/fine-tune the model
 
-[dim]Tip: You can also just type natural language and I'll try to understand what you want![/dim]
+[dim]💡 Tip: I understand natural language! Try "create a function to add numbers" or "build a web server"[/dim]
+[dim]🔍 Smart Features: Context awareness, command suggestions, intelligent error handling[/dim]
 """
         self.console.print(Panel(help_text, title="[bold]Nexus CLI Help[/bold]", border_style="cyan"))
     
+    def get_command_suggestions(self, partial_input: str) -> List[str]:
+        """Get intelligent command suggestions based on partial input."""
+        commands = [
+            "code", "read", "write", "list", "tree", "analyze", 
+            "functions", "classes", "run", "test", "install", 
+            "chat", "history", "clear", "help", "exit", "train"
+        ]
+        
+        suggestions = []
+        partial_lower = partial_input.lower()
+        
+        for cmd in commands:
+            if cmd.startswith(partial_lower):
+                suggestions.append(cmd)
+        
+        # Add context-aware suggestions
+        if "func" in partial_lower or "def" in partial_lower:
+            suggestions.extend(["code function", "functions"])
+        
+        if "web" in partial_lower or "server" in partial_lower:
+            suggestions.extend(["code web server", "code flask"])
+        
+        if "file" in partial_lower:
+            suggestions.extend(["read", "write", "list"])
+        
+        return list(set(suggestions))[:5]  # Limit to 5 suggestions
+    
     def process_command(self, user_input: str) -> str:
-        """Process user input and return response."""
+        """Process user input with intelligent command handling."""
         if not user_input.strip():
             return "Please provide a command or question."
         
         # Add to conversation history
         self.conversation_history.append({"role": "user", "content": user_input})
+        self.command_history.append(user_input)
         
         # Check for special commands first
         if user_input.startswith('/'):
@@ -155,42 +256,29 @@ class NexusCLI:
             command = parts[0].lower()
             args = parts[1:]
             
-            # Handle specific commands
-            if command == "code":
-                return self._handle_code_generation(args)
-            elif command == "read":
-                return self._handle_read_file(args)
-            elif command == "write":
-                return self._handle_write_file(args)
-            elif command == "list":
-                return self._handle_list_files(args)
-            elif command == "tree":
-                return self._handle_project_tree(args)
-            elif command == "analyze":
-                return self._handle_analyze_code(args)
-            elif command == "functions":
-                return self._handle_extract_functions(args)
-            elif command == "classes":
-                return self._handle_extract_classes(args)
-            elif command == "run":
-                return self._handle_run_command(args)
-            elif command == "test":
-                return self._handle_run_tests(args)
-            elif command == "install":
-                return self._handle_install_deps(args)
-            elif command == "chat":
-                return self._handle_chat_mode(args)
-            elif command == "history":
-                return self._handle_show_history(args)
-            elif command == "clear":
-                return self._handle_clear_history(args)
-            elif command == "help":
-                self.show_help()
-                return ""
-            elif command == "exit":
-                return "exit"
-            elif command == "train":
-                return self._handle_train_model(args)
+            # Handle specific commands with intelligent routing
+            command_handlers = {
+                "code": self._handle_code_generation,
+                "read": self._handle_read_file,
+                "write": self._handle_write_file,
+                "list": self._handle_list_files,
+                "tree": self._handle_project_tree,
+                "analyze": self._handle_analyze_code,
+                "functions": self._handle_extract_functions,
+                "classes": self._handle_extract_classes,
+                "run": self._handle_run_command,
+                "test": self._handle_run_tests,
+                "install": self._handle_install_deps,
+                "chat": self._handle_chat_mode,
+                "history": self._handle_show_history,
+                "clear": self._handle_clear_history,
+                "help": lambda args: (self.show_help(), "")[1],
+                "exit": lambda args: "exit",
+                "train": self._handle_train_model
+            }
+            
+            if command in command_handlers:
+                return command_handlers[command](args)
         
         # If no structured command, treat as natural language
         return self._handle_natural_language(user_input)
@@ -202,51 +290,98 @@ class NexusCLI:
             return ""
         elif command == "exit":
             return "exit"
+        elif command == "suggest":
+            return "Command suggestions: " + ", ".join(self.get_command_suggestions(""))
         else:
             return f"Unknown special command: /{command}"
     
     def _handle_code_generation(self, args: List[str]) -> str:
-        """Handle code generation requests."""
+        """Handle intelligent code generation requests."""
+        if not self.model_available:
+            return "[red]AI model not available. Only basic commands are supported.[/red]"
         if not args:
             return "[red]Please provide an instruction for code generation.[/red]"
         
-        if len(args) == 1:
-            instruction = args[0]
-            language = "python"
-        else:
-            if args[0].lower() in ["python", "javascript", "java", "cpp", "c", "go", "rust", "typescript"]:
-                language = args[0].lower()
+        # Detect language from instruction or args
+        language = "python"  # default
+        instruction = " ".join(args)
+        
+        # Check if first argument is a language
+        if len(args) > 1:
+            first_arg = args[0].lower()
+            supported_languages = {
+                "python", "py", "javascript", "js", "typescript", "ts", 
+                "java", "cpp", "c++", "c", "go", "rust", "rs", "php", 
+                "ruby", "rb", "swift", "kotlin", "scala", "r", "matlab",
+                "html", "css", "sql", "bash", "sh", "powershell", "ps1",
+                "markdown", "md", "json", "xml", "yaml", "yml"
+            }
+            
+            if first_arg in supported_languages:
+                language = first_arg
                 instruction = " ".join(args[1:])
-            else:
-                language = "python"
-                instruction = " ".join(args)
+                
+                # Normalize language names
+                language_map = {
+                    "py": "python", "js": "javascript", "ts": "typescript",
+                    "c++": "cpp", "rs": "rust", "rb": "ruby", "sh": "bash",
+                    "ps1": "powershell", "md": "markdown", "yml": "yaml"
+                }
+                language = language_map.get(language, language)
         
         if not self.model:
             return "[red]Model not available. Please ensure the model is loaded.[/red]"
         
         try:
-            self.console.print(f"[yellow]Generating {language} code...[/yellow]")
-            code = self.model.generate_code(instruction, language)
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=self.console
+            ) as progress:
+                task = progress.add_task(f"Generating {language} code...", total=None)
+                
+                # Generate code
+                code = self.model.generate_code(instruction, language)
+                
+                if code.startswith("[Error]"):
+                    self.console.print(f"[red]{code}[/red]")
+                    return code
+                
+                progress.update(task, description="✓ Code generated successfully!")
+                time.sleep(0.3)
             
-            if code.startswith("[Error]"):
-                self.console.print(f"[red]{code}[/red]")
-                return code
-            
+            # Syntax highlight and display
             highlighted_code = self.code_tools.syntax_highlight(code, language)
             self.console.print(Panel(highlighted_code, title=f"[bold]{language.title()} Code[/bold]", border_style="green"))
             
+            # Offer to save
             if Confirm.ask("[cyan]Would you like to save this code to a file?[/cyan]"):
-                filename = Prompt.ask("[magenta]Enter filename[/magenta]", default=f"generated_code.{language}")
+                # Suggest appropriate file extension
+                extensions = {
+                    "python": ".py", "javascript": ".js", "typescript": ".ts",
+                    "java": ".java", "cpp": ".cpp", "c": ".c", "go": ".go",
+                    "rust": ".rs", "php": ".php", "ruby": ".rb", "swift": ".swift",
+                    "kotlin": ".kt", "scala": ".scala", "r": ".r", "matlab": ".m",
+                    "html": ".html", "css": ".css", "sql": ".sql", "bash": ".sh",
+                    "powershell": ".ps1", "markdown": ".md", "json": ".json",
+                    "xml": ".xml", "yaml": ".yml"
+                }
+                ext = extensions.get(language, ".txt")
+                default_filename = f"generated_code{ext}"
+                
+                filename = Prompt.ask("[magenta]Enter filename[/magenta]", default=default_filename)
                 if self.file_tools.write_file(filename, code):
                     return f"[green]Code saved to [bold]{filename}[/bold][/green]"
                 else:
                     return f"[red]Failed to save code to {filename}. Please check the path and try again.[/red]"
+            
             return "[green]Code generated successfully![/green]"
+            
         except Exception as e:
             return f"[red]Error generating code: {str(e)}[/red]"
     
     def _handle_read_file(self, args: List[str]) -> str:
-        """Handle file reading requests."""
+        """Handle intelligent file reading requests."""
         if not args:
             return "[red]Please specify a file to read.[/red]"
         
@@ -254,26 +389,34 @@ class NexusCLI:
         if not self.file_tools.file_exists(file_path):
             return f"[red]File not found: {file_path}[/red]"
         
-        content = self.file_tools.read_file(file_path)
-        if content.startswith("Error reading file"):
-            return f"[red]{content}[/red]"
-        
-        # Determine language for syntax highlighting
-        ext = Path(file_path).suffix.lower()
-        language_map = {
-            '.py': 'python', '.js': 'javascript', '.ts': 'typescript',
-            '.java': 'java', '.cpp': 'cpp', '.c': 'c', '.go': 'go',
-            '.rs': 'rust', '.html': 'html', '.css': 'css', '.json': 'json',
-            '.md': 'markdown', '.txt': 'text', '.sh': 'bash', '.yml': 'yaml',
-            '.yaml': 'yaml', '.xml': 'xml', '.sql': 'sql'
-        }
-        language = language_map.get(ext, 'text')
-        
-        # Syntax highlight the content
-        highlighted_content = self.code_tools.syntax_highlight(content, language)
-        self.console.print(Panel(highlighted_content, title=f"[bold]{file_path}[/bold]", border_style="blue"))
-        
-        return f"[green]File {file_path} read successfully.[/green]"
+        try:
+            content = self.file_tools.read_file(file_path)
+            if content.startswith("Error reading file"):
+                return f"[red]{content}[/red]"
+            
+            # Determine language for syntax highlighting
+            ext = Path(file_path).suffix.lower()
+            language_map = {
+                '.py': 'python', '.js': 'javascript', '.ts': 'typescript',
+                '.java': 'java', '.cpp': 'cpp', '.c': 'c', '.go': 'go',
+                '.rs': 'rust', '.html': 'html', '.css': 'css', '.json': 'json',
+                '.md': 'markdown', '.txt': 'text', '.sh': 'bash', '.yml': 'yaml',
+                '.yaml': 'yaml', '.xml': 'xml', '.sql': 'sql'
+            }
+            language = language_map.get(ext, 'text')
+            
+            # Syntax highlight the content
+            highlighted_content = self.code_tools.syntax_highlight(content, language)
+            
+            # Create file info panel
+            file_info = f"Size: {self._format_file_size(len(content))} | Lines: {len(content.splitlines())} | Language: {language}"
+            
+            self.console.print(Panel(highlighted_content, title=f"[bold]{file_path}[/bold]", subtitle=file_info, border_style="blue"))
+            
+            return f"[green]File {file_path} read successfully.[/green]"
+            
+        except Exception as e:
+            return f"[red]Error reading file: {str(e)}[/red]"
     
     def _handle_write_file(self, args: List[str]) -> str:
         """Handle file writing requests."""
@@ -289,7 +432,7 @@ class NexusCLI:
             return f"[red]Failed to write to {file_path}. Please check the path and permissions.[/red]"
     
     def _handle_list_files(self, args: List[str]) -> str:
-        """Handle file listing requests."""
+        """Handle intelligent file listing requests."""
         directory = args[0] if args else "."
         
         if not os.path.exists(directory):
@@ -307,23 +450,27 @@ class NexusCLI:
                 elif os.path.isdir(item_path):
                     directories.append(item)
             
-            # Display directories first
-            if directories:
-                self.console.print("[bold blue]Directories:[/bold blue]")
-                for dir_name in sorted(directories):
-                    self.console.print(f"  📁 {dir_name}")
+            # Create table for better display
+            table = Table(title=f"Contents of {directory}")
+            table.add_column("Name", style="cyan")
+            table.add_column("Type", style="green")
+            table.add_column("Size", style="yellow")
             
-            # Display files
-            if files:
-                self.console.print("[bold green]Files:[/bold green]")
-                for file_name, size in sorted(files):
-                    size_str = self._format_file_size(size)
-                    self.console.print(f"  📄 {file_name} ({size_str})")
+            # Add directories first
+            for dir_name in sorted(directories):
+                table.add_row(f"📁 {dir_name}", "Directory", "")
+            
+            # Add files
+            for file_name, size in sorted(files):
+                size_str = self._format_file_size(size)
+                table.add_row(f"📄 {file_name}", "File", size_str)
+            
+            self.console.print(table)
             
             if not directories and not files:
                 return f"[yellow]Directory {directory} is empty.[/yellow]"
             
-            return f"[green]Listed contents of {directory}[/green]"
+            return f"[green]Listed {len(directories)} directories and {len(files)} files.[/green]"
             
         except Exception as e:
             return f"[red]Error listing files: {str(e)}[/red]"
@@ -342,41 +489,66 @@ class NexusCLI:
         return f"{size_bytes:.1f}{size_names[i]}"
     
     def _handle_project_tree(self, args: List[str]) -> str:
-        """Handle project tree display."""
+        """Handle intelligent project tree display."""
         root_dir = args[0] if args else "."
         
         if not os.path.exists(root_dir):
             return f"[red]Directory not found: {root_dir}[/red]"
         
         try:
-            def build_tree(directory, prefix="", is_last=True):
-                items = []
-                for item in os.listdir(directory):
-                    if not item.startswith('.'):  # Skip hidden files
-                        items.append(item)
-                
-                items.sort()
-                
-                for i, item in enumerate(items):
-                    item_path = os.path.join(directory, item)
-                    is_last_item = i == len(items) - 1
-                    
-                    if os.path.isdir(item_path):
-                        self.console.print(f"{prefix}{'└── ' if is_last_item else '├── '}📁 {item}")
-                        new_prefix = prefix + ('    ' if is_last_item else '│   ')
-                        build_tree(item_path, new_prefix, is_last_item)
-                    else:
-                        self.console.print(f"{prefix}{'└── ' if is_last_item else '├── '}📄 {item}")
+            tree = Tree(f"📁 {root_dir}")
             
-            self.console.print(f"[bold]Project Tree: {root_dir}[/bold]")
-            build_tree(root_dir)
+            # Directories to exclude
+            exclude_dirs = {
+                'venv', '__pycache__', '.git', 'node_modules', '.pytest_cache',
+                'build', 'dist', '.tox', '.mypy_cache', '.coverage', '.DS_Store',
+                '*.pyc', '*.pyo', '*.pyd', '.env', '.venv', 'env'
+            }
+            
+            def build_tree_node(directory, parent_node, depth=0):
+                if depth > 5:  # Limit depth to prevent infinite recursion
+                    return
+                    
+                try:
+                    items = []
+                    for item in os.listdir(directory):
+                        # Skip hidden files and excluded directories
+                        if (item.startswith('.') or 
+                            item in exclude_dirs or
+                            item.endswith('.pyc') or
+                            item.endswith('.pyo') or
+                            item.endswith('.pyd')):
+                            continue
+                        
+                        # Skip if it's a virtual environment directory
+                        if item == 'venv' or item == '.venv' or item == 'env':
+                            continue
+
+                        items.append(item)
+                    
+                    items.sort()
+                    
+                    for item in items:
+                        item_path = os.path.join(directory, item)
+                        if os.path.isdir(item_path):
+                            child = parent_node.add(f"📁 {item}")
+                            build_tree_node(item_path, child, depth + 1)
+                        else:
+                            parent_node.add(f"📄 {item}")
+                except PermissionError:
+                    # Skip directories we can't access
+                    pass
+            
+            build_tree_node(root_dir, tree)
+            self.console.print(tree)
+            
             return "[green]Project tree displayed successfully.[/green]"
             
         except Exception as e:
             return f"[red]Error displaying project tree: {str(e)}[/red]"
     
     def _handle_analyze_code(self, args: List[str]) -> str:
-        """Handle code analysis requests."""
+        """Handle intelligent code analysis requests."""
         if not args:
             return "[red]Please specify a file to analyze.[/red]"
         
@@ -389,45 +561,79 @@ class NexusCLI:
             if content.startswith("Error reading file"):
                 return f"[red]{content}[/red]"
             
-            # Basic code analysis
-            lines = content.split('\n')
-            total_lines = len(lines)
-            empty_lines = sum(1 for line in lines if not line.strip())
-            code_lines = total_lines - empty_lines
+            # Use the model's code analyzer
+            if self.model:
+                analysis = self.model.analyze_code(content)
+            else:
+                # Fallback analysis
+                analysis = self._fallback_analysis(content)
             
-            # Count functions and classes
-            functions = len(re.findall(r'^\s*def\s+\w+', content, re.MULTILINE))
-            classes = len(re.findall(r'^\s*class\s+\w+', content, re.MULTILINE))
+            # Display analysis results
+            if "error" in analysis:
+                return f"[red]Analysis error: {analysis['error']}[/red]"
             
-            # Count imports
-            imports = len(re.findall(r'^\s*(import|from)\s+', content, re.MULTILINE))
+            # Create analysis table
+            table = Table(title=f"Code Analysis: {file_path}")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value", style="green")
             
-            # File size
-            file_size = os.path.getsize(file_path)
+            table.add_row("Total Lines", str(len(content.splitlines())))
+            table.add_row("Code Lines", str(len(content.splitlines()) - content.count('\n\n')))
+            table.add_row("Functions", str(analysis.get('function_count', 0)))
+            table.add_row("Classes", str(analysis.get('class_count', 0)))
+            table.add_row("Imports", str(analysis.get('import_count', 0)))
+            table.add_row("File Size", self._format_file_size(len(content)))
             
-            analysis = f"""
-[bold]Code Analysis for {file_path}[/bold]
-
-📊 Statistics:
-  • Total lines: {total_lines}
-  • Code lines: {code_lines}
-  • Empty lines: {empty_lines}
-  • Functions: {functions}
-  • Classes: {classes}
-  • Imports: {imports}
-  • File size: {self._format_file_size(file_size)}
-
-📈 Code Quality:
-  • Code density: {(code_lines/total_lines*100):.1f}%
-  • Functions per file: {functions}
-  • Classes per file: {classes}
-"""
+            self.console.print(table)
             
-            self.console.print(Panel(analysis, title="[bold]Code Analysis[/bold]", border_style="cyan"))
+            # Show functions and classes if any
+            if analysis.get('functions'):
+                func_table = Table(title="Functions")
+                func_table.add_column("Name", style="cyan")
+                func_table.add_column("Arguments", style="yellow")
+                func_table.add_column("Line", style="green")
+                
+                for func in analysis['functions']:
+                    args_str = ", ".join(func['args'])
+                    func_table.add_row(func['name'], args_str, str(func['line']))
+                
+                self.console.print(func_table)
+            
+            if analysis.get('classes'):
+                class_table = Table(title="Classes")
+                class_table.add_column("Name", style="cyan")
+                class_table.add_column("Methods", style="yellow")
+                class_table.add_column("Line", style="green")
+                
+                for cls in analysis['classes']:
+                    methods_str = ", ".join([m['name'] for m in cls['methods']])
+                    class_table.add_row(cls['name'], methods_str, str(cls['line']))
+                
+                self.console.print(class_table)
+            
             return "[green]Code analysis completed.[/green]"
             
         except Exception as e:
             return f"[red]Error analyzing code: {str(e)}[/red]"
+    
+    def _fallback_analysis(self, content: str) -> Dict[str, Any]:
+        """Fallback code analysis without AST."""
+        lines = content.split('\n')
+        total_lines = len(lines)
+        empty_lines = sum(1 for line in lines if not line.strip())
+        code_lines = total_lines - empty_lines
+        
+        functions = len(re.findall(r'^\s*def\s+\w+', content, re.MULTILINE))
+        classes = len(re.findall(r'^\s*class\s+\w+', content, re.MULTILINE))
+        imports = len(re.findall(r'^\s*(import|from)\s+', content, re.MULTILINE))
+        
+        return {
+            'function_count': functions,
+            'class_count': classes,
+            'import_count': imports,
+            'total_lines': total_lines,
+            'code_lines': code_lines
+        }
     
     def _handle_extract_functions(self, args: List[str]) -> str:
         """Handle function extraction requests."""
@@ -443,17 +649,32 @@ class NexusCLI:
             if content.startswith("Error reading file"):
                 return f"[red]{content}[/red]"
             
-            # Extract functions using regex
-            function_pattern = r'^\s*def\s+(\w+)\s*\([^)]*\)\s*:.*?(?=^\s*def|\Z)'
-            functions = re.findall(function_pattern, content, re.MULTILINE | re.DOTALL)
+            # Use model's analyzer if available
+            if self.model:
+                analysis = self.model.analyze_code(content)
+                functions = analysis.get('functions', [])
+            else:
+                # Fallback extraction
+                function_pattern = r'^\s*def\s+(\w+)\s*\([^)]*\)\s*:.*?(?=^\s*def|\Z)'
+                function_matches = re.findall(function_pattern, content, re.MULTILINE | re.DOTALL)
+                functions = [{"name": name} for name in function_matches]
             
             if not functions:
                 return "[yellow]No functions found in the file.[/yellow]"
             
-            self.console.print(f"[bold]Functions found in {file_path}:[/bold]")
-            for i, func in enumerate(functions, 1):
-                self.console.print(f"  {i}. {func}")
+            # Display functions
+            table = Table(title=f"Functions in {file_path}")
+            table.add_column("Name", style="cyan")
+            table.add_column("Arguments", style="yellow")
+            table.add_column("Line", style="green")
             
+            for func in functions:
+                name = func.get('name', 'Unknown')
+                args = ", ".join(func.get('args', []))
+                line = str(func.get('line', 'Unknown'))
+                table.add_row(name, args, line)
+            
+            self.console.print(table)
             return f"[green]Found {len(functions)} functions.[/green]"
             
         except Exception as e:
@@ -473,24 +694,39 @@ class NexusCLI:
             if content.startswith("Error reading file"):
                 return f"[red]{content}[/red]"
             
-            # Extract classes using regex
-            class_pattern = r'^\s*class\s+(\w+).*?(?=^\s*class|\Z)'
-            classes = re.findall(class_pattern, content, re.MULTILINE | re.DOTALL)
+            # Use model's analyzer if available
+            if self.model:
+                analysis = self.model.analyze_code(content)
+                classes = analysis.get('classes', [])
+            else:
+                # Fallback extraction
+                class_pattern = r'^\s*class\s+(\w+).*?(?=^\s*class|\Z)'
+                class_matches = re.findall(class_pattern, content, re.MULTILINE | re.DOTALL)
+                classes = [{"name": name} for name in class_matches]
             
             if not classes:
                 return "[yellow]No classes found in the file.[/yellow]"
             
-            self.console.print(f"[bold]Classes found in {file_path}:[/bold]")
-            for i, cls in enumerate(classes, 1):
-                self.console.print(f"  {i}. {cls}")
+            # Display classes
+            table = Table(title=f"Classes in {file_path}")
+            table.add_column("Name", style="cyan")
+            table.add_column("Methods", style="yellow")
+            table.add_column("Line", style="green")
             
+            for cls in classes:
+                name = cls.get('name', 'Unknown')
+                methods = ", ".join([m['name'] for m in cls.get('methods', [])])
+                line = str(cls.get('line', 'Unknown'))
+                table.add_row(name, methods, line)
+            
+            self.console.print(table)
             return f"[green]Found {len(classes)} classes.[/green]"
             
         except Exception as e:
             return f"[red]Error extracting classes: {str(e)}[/red]"
     
     def _handle_run_command(self, args: List[str]) -> str:
-        """Handle shell command execution."""
+        """Handle shell command execution with intelligent output."""
         if not args:
             return "[red]Please specify a command to run.[/red]"
         
@@ -513,8 +749,8 @@ class NexusCLI:
             return f"[red]Error running command: {str(e)}[/red]"
     
     def _handle_run_tests(self, args: List[str]) -> str:
-        """Handle test execution."""
-        self.console.print("[yellow]Looking for test files...[/yellow]")
+        """Handle intelligent test execution."""
+        self.console.print("[yellow]Detecting test framework...[/yellow]")
         
         # Try common test commands
         test_commands = [
@@ -539,7 +775,7 @@ class NexusCLI:
         return "[red]No test framework detected. Please run tests manually.[/red]"
     
     def _handle_install_deps(self, args: List[str]) -> str:
-        """Handle dependency installation."""
+        """Handle intelligent dependency installation."""
         self.console.print("[yellow]Detecting package manager...[/yellow]")
         
         # Try common package managers
@@ -567,17 +803,19 @@ class NexusCLI:
         return "[red]No package manager detected. Please install dependencies manually.[/red]"
     
     def _handle_chat_mode(self, args: List[str]) -> str:
-        """Handle chat mode."""
-        self.console.print("[bold green]Entering chat mode. Type 'exit' to return to command mode.[/bold green]")
-        
+        """Handle intelligent chat mode."""
+        if not self.model_available:
+            return "[red]AI model not available. Only basic commands are supported.[/red]"
+        self.console.print("[bold green]Entering intelligent chat mode. Type 'exit' to return to command mode.[/bold green]")
+
         while True:
             try:
                 user_input = Prompt.ask("\n[cyan]You[/cyan]")
                 if user_input.lower() in ['exit', 'quit', 'back']:
                     break
                 
+                # The model now handles typing animations internally
                 response = self._handle_natural_language(user_input)
-                self.console.print(f"\n[green]Nexus[/green]: {response}")
                 
             except KeyboardInterrupt:
                 break
@@ -585,22 +823,31 @@ class NexusCLI:
         return "[green]Exited chat mode.[/green]"
     
     def _handle_show_history(self, args: List[str]) -> str:
-        """Handle conversation history display."""
-        if not self.conversation_history:
-            return "[yellow]No conversation history.[/yellow]"
+        """Handle conversation and command history display."""
+        if not self.conversation_history and not self.command_history:
+            return "[yellow]No history available.[/yellow]"
         
-        self.console.print("[bold]Conversation History:[/bold]")
-        for i, msg in enumerate(self.conversation_history[-10:], 1):  # Show last 10 messages
-            role = "You" if msg["role"] == "user" else "Nexus"
-            color = "cyan" if msg["role"] == "user" else "green"
-            self.console.print(f"[{color}]{role}[/{color}]: {msg['content']}")
+        # Show conversation history
+        if self.conversation_history:
+            self.console.print("[bold]Recent Conversations:[/bold]")
+            for i, msg in enumerate(self.conversation_history[-10:], 1):
+                role = "You" if msg["role"] == "user" else "Nexus"
+                color = "cyan" if msg["role"] == "user" else "green"
+                self.console.print(f"[{color}]{role}[/{color}]: {msg['content']}")
         
-        return f"[green]Showing last {min(10, len(self.conversation_history))} messages.[/green]"
+        # Show command history
+        if self.command_history:
+            self.console.print("\n[bold]Recent Commands:[/bold]")
+            for i, cmd in enumerate(self.command_history[-10:], 1):
+                self.console.print(f"  {i}. {cmd}")
+        
+        return "[green]History displayed.[/green]"
     
     def _handle_clear_history(self, args: List[str]) -> str:
         """Handle conversation history clearing."""
         self.conversation_history.clear()
-        return "[green]Conversation history cleared.[/green]"
+        self.command_history.clear()
+        return "[green]History cleared.[/green]"
     
     def _handle_train_model(self, args: List[str]) -> str:
         """Handle model training."""
@@ -622,28 +869,28 @@ class NexusCLI:
     
     def _handle_natural_language(self, user_input: str) -> str:
         """Handle natural language input using the AI model."""
+        if not self.model_available:
+            return "[red]AI model not available. Only basic commands are supported.[/red]"
         if not self.model:
             return "[red]AI model not available. Please ensure the model is loaded.[/red]"
         
         try:
-            # Get recent context
-            recent_context = self.memory.get_recent_context(2)
-            
-            # Build prompt with context
-            if recent_context:
-                prompt = f"Recent conversation:\n{recent_context}\n\nUser: {user_input}\nAssistant:"
-            else:
-                prompt = f"User: {user_input}\nAssistant:"
-            
-            # Generate response
-            response = self.model.generate_response(prompt, max_length=256, temperature=0.7)
+            # Generate response first
+            response = self.model.generate_response(user_input, max_length=256, temperature=0.7)
             
             # Clean up the response to prevent repetitive text
             response = self._clean_response(response)
             
             # Add to conversation history
+            self.conversation_history.append({"role": "user", "content": user_input})
             self.conversation_history.append({"role": "assistant", "content": response})
-            self.memory.add_conversation(user_input, response)
+            
+            # Add to memory if available
+            try:
+                self.memory.add_conversation(user_input, response)
+            except Exception as mem_error:
+                # Memory error shouldn't break the chat
+                print(f"Warning: Memory error: {mem_error}")
             
             return response
             
@@ -678,7 +925,7 @@ class NexusCLI:
             # Limit response length
             if len(cleaned_lines) >= 10:
                 break
-        
+
         # If we have no meaningful content, provide a fallback
         if not cleaned_lines or len(' '.join(cleaned_lines)) < 10:
             return "I understand your question. Let me help you with that. Could you please provide more details about what you'd like me to help you with?"
@@ -686,25 +933,26 @@ class NexusCLI:
         return '\n'.join(cleaned_lines)
     
     def run(self):
-        """Main CLI loop."""
+        """Main CLI loop with intelligent features."""
         self.show_welcome()
-        
         while True:
             try:
                 user_input = Prompt.ask("\n[cyan]nexus[/cyan]")
-                
                 if user_input.lower() in ['exit', 'quit']:
                     self.console.print("[yellow]Goodbye![/yellow]")
                     break
-                
+                if user_input.lower() == 'model_status':
+                    self.console.print(f"model_available: {self.model_available}")
+                    self.console.print(f"model: {getattr(self.model, 'model', None)}")
+                    self.console.print(f"llm.model: {getattr(getattr(self.model, 'llm', None), 'model', None)}")
+                    self.console.print(f"llm.pipe: {getattr(getattr(self.model, 'llm', None), 'pipe', None)}")
+                    continue
                 response = self.process_command(user_input)
-                
                 if response == "exit":
                     self.console.print("[yellow]Goodbye![/yellow]")
                     break
                 elif response:
                     self.console.print(f"[green]Nexus[/green]: {response}")
-                
             except KeyboardInterrupt:
                 self.console.print("\n[yellow]Use 'exit' to quit.[/yellow]")
             except EOFError:
@@ -712,9 +960,10 @@ class NexusCLI:
             except Exception as e:
                 self.console.print(f"[red]Error: {str(e)}[/red]")
 
+
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="Nexus CLI - Custom AI Coding Assistant")
+    parser = argparse.ArgumentParser(description="Nexus CLI - Intelligent AI Coding Assistant")
     parser.add_argument("--model-path", help="Path to custom model")
     parser.add_argument("--config", help="Path to model config file")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
@@ -725,11 +974,12 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
     
     try:
-        cli = NexusCLI()
+        cli = IntelligentNexusCLI()
         cli.run()
     except Exception as e:
         print(f"Fatal error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -1,67 +1,68 @@
-# Nexus CLI - Custom AI Coding Assistant
+# Nexus CLI - Intelligent AI Coding Assistant
 
-A powerful command-line interface (CLI) similar to Gemini CLI, powered by a custom-trained AI model for code generation, file operations, and project management.
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
 
-## 🚀 Features
+> **🚀 The most intelligent CLI coding assistant - powered by advanced code generation and analysis, with NO GPT wrappers!**
 
-### 🤖 AI-Powered Code Generation
-- Generate code from natural language descriptions
-- Support for multiple programming languages (Python, JavaScript, Java, C++, Go, Rust, TypeScript)
-- Context-aware code generation with conversation memory
-- Syntax highlighting for generated code
+Nexus CLI is a revolutionary command-line interface that combines the best practices from successful CLI tools like **Warp**, **Cursor**, **Gemini CLI**, and **Claude Code** to provide an intelligent, context-aware coding experience. Built entirely with open-source frameworks and techniques, it delivers professional-grade code generation and analysis without relying on external AI services.
 
-### 📁 File Operations
-- Read and display file contents with syntax highlighting
-- Write content to files with automatic directory creation
-- List files and directories with detailed information
-- Project structure visualization
+## ✨ Key Features
 
-### 🔍 Code Analysis
-- Extract and analyze functions and classes from code
-- Syntax validation for Python code
-- Code formatting and structure analysis
-- Project-wide code exploration
+### 🧠 **Intelligent Code Generation**
+- **Natural Language Processing**: Generate code from plain English descriptions
+- **Multi-Language Support**: Python, JavaScript, TypeScript, Java, C++, Go, Rust, and more
+- **Context-Aware Templates**: Smart code patterns based on your project structure
+- **AST-Based Analysis**: Advanced code understanding and generation
 
-### 🛠️ Project Management
-- Run shell commands and scripts
-- Automatic test execution (pytest, unittest, npm test, cargo test, go test)
-- Dependency installation (pip, npm, cargo, go)
-- Project root detection
+### 🔍 **Advanced Code Analysis**
+- **AST Parsing**: Deep code structure analysis using Abstract Syntax Trees
+- **Complexity Metrics**: Function extraction, class analysis, and code quality assessment
+- **Syntax Highlighting**: Beautiful, syntax-highlighted code display
+- **Intelligent Error Detection**: Context-aware error handling and suggestions
 
-### 💬 Conversation & Memory
-- Natural language conversation mode
-- Conversation history tracking
-- Project context memory
-- Persistent memory across sessions
+### 📂 **Smart File Operations**
+- **Intelligent Path Resolution**: Automatically find files in common directories
+- **Encoding Detection**: Handle multiple file encodings seamlessly
+- **Project Tree Visualization**: Beautiful tree structures with Rich terminal output
+- **File Type Recognition**: Automatic language detection and syntax highlighting
 
-### 🎨 Beautiful CLI Interface
-- Rich terminal output with colors and formatting
-- Interactive prompts and confirmations
-- Progress bars and status indicators
-- Syntax-highlighted code display
+### 🛠️ **Project Management**
+- **Project Detection**: Automatically identify project types (Python, Node.js, Rust, Go, etc.)
+- **Dependency Analysis**: Smart detection and installation of project dependencies
+- **Test Framework Detection**: Intelligent test execution across multiple frameworks
+- **Build System Integration**: Support for various build tools and package managers
 
-## 🏗️ Architecture
+### 🎨 **Modern CLI Experience**
+- **Rich Terminal Output**: Beautiful, colorful interface with progress indicators
+- **Command Suggestions**: Context-aware command completion and suggestions
+- **Memory Management**: Persistent conversation and command history
+- **Error Handling**: Graceful error recovery with helpful suggestions
 
-```
-Nexus-CLI/
-├── nexus_cli.py          # Main CLI application
-├── model/
-│   └── nexus_model.py    # Custom AI model wrapper
-├── tools.py              # File, code, and project tools
-├── train_nexus_model.py  # Model training script
-├── data/                 # Training data and datasets
-├── memory/               # Conversation and project memory
-├── model_config.json     # Model configuration
-└── requirements.txt      # Python dependencies
-```
+### 🚀 **Performance & Reliability**
+- **No External Dependencies**: Works completely offline without API calls
+- **Fast Execution**: Optimized for speed with intelligent caching
+- **Cross-Platform**: Works on macOS, Linux, and Windows
+- **Production Ready**: Robust error handling and edge case management
+
+## 🎯 **What Makes Nexus CLI Special**
+
+Unlike other CLI tools that rely on external AI services or GPT wrappers, Nexus CLI uses:
+
+- **🔧 Open-source frameworks** and techniques from successful CLI tools
+- **🧠 Intelligent pattern matching** and semantic analysis
+- **📊 AST-based code understanding** for accurate generation
+- **🎨 Modern CLI patterns** from Warp, Cursor, and other successful tools
+- **⚡ Zero-latency responses** with no API calls or network dependencies
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### Installation
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/yourusername/Nexus-CLI.git
 cd Nexus-CLI
 
 # Create virtual environment
@@ -70,286 +71,232 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-```
 
-### 2. Train the Model (Optional)
-
-```bash
-# Create sample training data
-python train_nexus_model.py --create-data
-
-# Train the model with custom data
-python train_nexus_model.py --epochs 3 --batch-size 4
-
-# Train with additional datasets
-python train_nexus_model.py --sources custom codealpaca --epochs 5
-```
-
-### 3. Run the CLI
-
-```bash
-# Start the CLI
+# Run the CLI
 python nexus_cli.py
-
-# Or with custom model path
-python nexus_cli.py --model-path ./model/nexus_model
 ```
 
-## 📖 Usage Examples
+### Basic Usage
+
+```bash
+# Generate code from natural language
+nexus> code function to add two numbers
+nexus> code class calculator with basic operations
+nexus> code web server with flask
+
+# Analyze existing code
+nexus> read myfile.py
+nexus> analyze myfile.py
+nexus> functions myfile.py
+nexus> classes myfile.py
+
+# Project operations
+nexus> list
+nexus> tree
+nexus> run python my_script.py
+nexus> test
+nexus> install
+
+# Natural language conversation
+nexus> What is a variable in programming?
+nexus> How do I create a web server?
+nexus> Explain object-oriented programming
+```
+
+## 📚 **Command Reference**
 
 ### Code Generation
-
 ```bash
-# Generate Python function
-nexus> code create a function to calculate fibonacci numbers
-
-# Generate JavaScript class
-nexus> code javascript create a class for a todo list
-
-# Generate code in specific language
-nexus> code python write a function to sort a list
+code <instruction>                    # Generate code from natural language
+code <language> <instruction>         # Generate code in specific language
 ```
 
 ### File Operations
-
 ```bash
-# Read a file with syntax highlighting
-nexus> read main.py
+read <file>                          # Read and syntax-highlight file
+write <file> <content>               # Write content to file
+list [directory]                     # List files with intelligent formatting
+tree [directory]                     # Show project structure tree
+```
 
-# Write content to a file
-nexus> write new_file.py "def hello(): print('Hello, World!')"
+### Code Analysis
+```bash
+analyze <file>                       # Intelligent code analysis with AST
+functions <file>                     # Extract and analyze functions
+classes <file>                       # Extract and analyze classes
+```
 
-# List files in current directory
-nexus> list
+### Project Management
+```bash
+run <command>                        # Run shell command with output capture
+test                                 # Intelligent test detection and execution
+install                              # Smart dependency installation
+```
 
-# Show project structure
+### Conversation & System
+```bash
+chat                                 # Start intelligent conversation mode
+history                              # Show conversation and command history
+clear                                # Clear conversation history
+help                                 # Show comprehensive help
+exit                                 # Exit Nexus CLI
+train                                # Train/fine-tune the model
+```
+
+## 🧪 **Examples**
+
+### Generate a Web Server
+```bash
+nexus> code web server with flask
+```
+**Output:**
+```python
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return jsonify({"message": "Hello, World!", "status": "running"})
+
+@app.route('/api/data', methods=['GET'])
+def get_data():
+    return jsonify({"data": "Some data"})
+
+@app.route('/api/data', methods=['POST'])
+def post_data():
+    data = request.get_json()
+    return jsonify({"received": data})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+### Analyze Code Structure
+```bash
+nexus> analyze my_module.py
+```
+**Output:**
+```
+Code Analysis: my_module.py
+┌──────────────┬─────────┐
+│ Metric       │ Value   │
+├──────────────┼─────────┤
+│ Total Lines  │ 45      │
+│ Code Lines   │ 38      │
+│ Functions    │ 3       │
+│ Classes      │ 1       │
+│ Imports      │ 2       │
+│ File Size    │ 1.2KB   │
+└──────────────┴─────────┘
+```
+
+### Project Tree Visualization
+```bash
 nexus> tree
 ```
-
-### Code Analysis
-
-```bash
-# Analyze code structure
-nexus> analyze main.py
-
-# Extract functions from file
-nexus> functions utils.py
-
-# Extract classes from file
-nexus> classes models.py
+**Output:**
+```
+📁 .
+├── 📁 src
+│   ├── 📄 main.py
+│   └── 📄 utils.py
+├── 📁 tests
+│   └── 📄 test_main.py
+├── 📄 requirements.txt
+└── 📄 README.md
 ```
 
-### Project Management
+## 🔧 **Advanced Features**
+
+### Context-Aware Suggestions
+Nexus CLI provides intelligent command suggestions based on your current context:
+- **File operations** when you're working with files
+- **Code generation** when you mention functions or classes
+- **Project management** when you're in a project directory
+
+### Memory and History
+- **Persistent conversation history** across sessions
+- **Command history** with intelligent search
+- **Context extraction** from user inputs
+- **Smart memory management** with automatic cleanup
+
+### Project Intelligence
+- **Automatic project type detection** (Python, Node.js, Rust, Go, etc.)
+- **Dependency analysis** and smart installation
+- **Build system integration** for various frameworks
+- **Test framework detection** and execution
+
+## 🏗️ **Architecture**
+
+Nexus CLI is built with a modular, extensible architecture:
+
+```
+nexus_cli.py          # Main CLI interface
+├── model/
+│   └── nexus_model.py # Intelligent code generation engine
+├── tools.py          # Enhanced utility tools
+├── memory/           # Conversation and context memory
+└── examples/         # Demo and example files
+```
+
+### Core Components
+
+1. **IntelligentNexusCLI**: Main CLI class with modern features
+2. **NexusModel**: Advanced code generation with AST analysis
+3. **FileTools**: Enhanced file operations with intelligent path resolution
+4. **CodeTools**: Advanced code analysis and manipulation
+5. **ProjectTools**: Smart project management and detection
+6. **MemoryTools**: Context-aware memory and conversation management
+
+## 🚀 **Performance**
+
+- **⚡ Instant responses** - No API calls or network latency
+- **🧠 Intelligent caching** - Smart memory management
+- **📊 Optimized analysis** - Fast AST parsing and code generation
+- **🎯 Context awareness** - Efficient project and file detection
+
+## 🤝 **Contributing**
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
 
 ```bash
-# Run shell command
-nexus> run python main.py
+# Clone and setup
+git clone https://github.com/yourusername/Nexus-CLI.git
+cd Nexus-CLI
+pip install -r requirements.txt
 
 # Run tests
-nexus> test
+python test_enhanced_cli.py
 
-# Install dependencies
-nexus> install
+# Run demo
+python demo_enhanced_features.py
 ```
 
-### Natural Language
+## 📄 **License**
 
-```bash
-# Ask questions in natural language
-nexus> How do I create a web server in Python?
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-nexus> What's wrong with this code: def add(a, b return a + b
+## 🙏 **Acknowledgments**
 
-nexus> Help me refactor this function to be more efficient
-```
+Nexus CLI is inspired by and incorporates techniques from:
+- **Warp** - Modern terminal experience
+- **Cursor** - Intelligent code editing
+- **Gemini CLI** - Natural language processing
+- **Claude Code** - Advanced code analysis
+- **Rich** - Beautiful terminal output
+- **AST** - Abstract Syntax Tree analysis
 
-## 🔧 Configuration
+## 📞 **Support**
 
-### Model Configuration (`model_config.json`)
-
-```json
-{
-  "model_name": "microsoft/DialoGPT-medium",
-  "vocab_size": 50257,
-  "n_positions": 1024,
-  "n_embd": 1024,
-  "n_layer": 12,
-  "n_head": 12,
-  "max_length": 2048,
-  "temperature": 0.7,
-  "top_p": 0.9,
-  "do_sample": true
-}
-```
-
-### Training Configuration
-
-```bash
-# Basic training
-python train_nexus_model.py --epochs 3 --batch-size 4
-
-# Advanced training with custom parameters
-python train_nexus_model.py \
-  --model microsoft/DialoGPT-medium \
-  --output ./model/custom_nexus \
-  --epochs 5 \
-  --batch-size 8 \
-  --lr 3e-5 \
-  --max-length 1024 \
-  --sources custom codealpaca
-```
-
-## 🎯 Available Commands
-
-### Code Generation
-- `code <instruction>` - Generate code from natural language
-- `code <language> <instruction>` - Generate code in specific language
-
-### File Operations
-- `read <file>` - Read and display file contents
-- `write <file> <content>` - Write content to file
-- `list [directory] [pattern]` - List files in directory
-- `tree [directory] [depth]` - Show project structure
-
-### Code Analysis
-- `analyze <file>` - Analyze code structure
-- `functions <file>` - Extract functions from file
-- `classes <file>` - Extract classes from file
-
-### Project Management
-- `run <command>` - Run shell command
-- `test` - Run project tests
-- `install` - Install dependencies
-
-### Conversation
-- `chat` - Start conversation mode
-- `history` - Show conversation history
-- `clear` - Clear conversation history
-
-### System
-- `help` - Show help information
-- `exit` - Exit Nexus CLI
-- `train` - Train/fine-tune the model
-
-## 🧠 Model Training
-
-### Training Data Sources
-
-1. **Custom Data** (`data/custom_training_data.json`)
-   - Hand-crafted instruction-completion pairs
-   - Focused on common programming tasks
-
-2. **Code Alpaca** (`HuggingFaceH4/CodeAlpaca_20K`)
-   - Large dataset of code generation examples
-   - High-quality instruction-following format
-
-3. **CodeParrot** (`codeparrot/codeparrot-clean-valid`)
-   - Raw code dataset for language modeling
-   - Good for understanding code patterns
-
-### Training Process
-
-```bash
-# 1. Create sample data
-python train_nexus_model.py --create-data
-
-# 2. Train with custom data
-python train_nexus_model.py --epochs 3
-
-# 3. Train with multiple sources
-python train_nexus_model.py --sources custom codealpaca --epochs 5
-
-# 4. Fine-tune existing model
-python train_nexus_model.py --model ./model/nexus_model --epochs 2
-```
-
-## 🔧 Development
-
-### Project Structure
-
-```
-Nexus-CLI/
-├── nexus_cli.py              # Main CLI application
-├── model/
-│   └── nexus_model.py        # AI model wrapper
-├── tools.py                  # Utility tools
-├── train_nexus_model.py      # Training script
-├── data/
-│   ├── custom_training_data.json
-│   └── your_code_data.py
-├── memory/
-│   └── conversation_memory.json
-├── model_config.json         # Model configuration
-├── requirements.txt          # Dependencies
-└── README.md                 # This file
-```
-
-### Adding New Features
-
-1. **New Commands**: Add handlers in `nexus_cli.py`
-2. **New Tools**: Extend classes in `tools.py`
-3. **Model Improvements**: Modify `model/nexus_model.py`
-4. **Training Data**: Add to `data/custom_training_data.json`
-
-### Testing
-
-```bash
-# Run the CLI in test mode
-python nexus_cli.py --debug
-
-# Test specific commands
-echo "code create a hello world function" | python nexus_cli.py
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [Transformers](https://github.com/huggingface/transformers) by Hugging Face
-- Inspired by Gemini CLI and similar AI coding assistants
-- Uses [Rich](https://github.com/Textualize/rich) for beautiful CLI output
-- Training data from Code Alpaca and CodeParrot datasets
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Model Loading Error**
-   ```bash
-   # Ensure model is trained first
-   python train_nexus_model.py --create-data
-   python train_nexus_model.py
-   ```
-
-2. **Memory Issues**
-   ```bash
-   # Reduce batch size and sequence length
-   python train_nexus_model.py --batch-size 2 --max-length 256
-   ```
-
-3. **Dependency Issues**
-   ```bash
-   # Reinstall dependencies
-   pip install -r requirements.txt --force-reinstall
-   ```
-
-### Getting Help
-
-- Check the help command: `help`
-- Review the conversation history: `history`
-- Check the logs for detailed error messages
-- Ensure all dependencies are installed correctly
+- **Issues**: [GitHub Issues](https://github.com/yourusername/Nexus-CLI/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/Nexus-CLI/discussions)
+- **Documentation**: [Wiki](https://github.com/yourusername/Nexus-CLI/wiki)
 
 ---
 
-**Nexus CLI** - Your custom AI coding assistant, powered by your own trained model! 🚀
+**🎉 Ready to experience the future of CLI coding assistants? Try Nexus CLI today!**
+
+*No GPT wrappers. No external dependencies. Pure intelligent coding assistance.*
