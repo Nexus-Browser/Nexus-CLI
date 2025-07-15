@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
 
-> ** The most intelligent CLI coding assistant, powered by advanced code generation and analysis, with NO GPT wrappers!**
+> **The most intelligent CLI coding assistant, powered by advanced code generation and analysis, with NO GPT wrappers!**
 
 Nexus CLI is a revolutionary command-line interface that combines the best practices from successful CLI tools like **Warp**, **Cursor**, **Gemini CLI**, and **Claude Code** to provide an intelligent, context-aware coding experience. Built entirely with open-source frameworks and techniques, it delivers professional-grade code generation and analysis without relying on external AI services.
 
