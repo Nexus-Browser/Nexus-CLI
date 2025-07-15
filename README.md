@@ -207,7 +207,7 @@ nexus> tree
 └── 📄 README.md
 ```
 
-## 🔧 **Advanced Features**
+## **Advanced Features**
 
 ### Context-Aware Suggestions
 Nexus CLI provides intelligent command suggestions based on your current context:
@@ -227,7 +227,7 @@ Nexus CLI provides intelligent command suggestions based on your current context
 - **Build system integration** for various frameworks
 - **Test framework detection** and execution
 
-## 🏗️ **Architecture**
+## **Architecture**
 
 Nexus CLI is built with a modular, extensible architecture:
 
