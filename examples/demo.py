@@ -15,7 +15,7 @@ from nexus_cli import NexusCLI
 
 def demo_code_generation():
     """Demonstrate code generation capabilities."""
-    print("🔧 Demo: Code Generation")
+    print(" Demo: Code Generation")
     print("-" * 40)
     
     cli = NexusCLI()
@@ -28,13 +28,13 @@ def demo_code_generation():
     ]
     
     for instruction in test_instructions:
-        print(f"\n📝 Instruction: {instruction}")
+        print(f"\n Instruction: {instruction}")
         response = cli._handle_code_generation([instruction])
-        print(f"🤖 Response: {response[:200]}...")
+        print(f" Response: {response[:200]}...")
 
 def demo_file_operations():
     """Demonstrate file operation capabilities."""
-    print("\n📁 Demo: File Operations")
+    print("\n Demo: File Operations")
     print("-" * 40)
     
     cli = NexusCLI()
@@ -53,14 +53,14 @@ def add_numbers(a, b):
         # Test file reading
         print(f"\n📖 Reading file: {temp_file}")
         response = cli._handle_read_file([temp_file])
-        print(f"✅ {response}")
+        print(f" {response}")
         
         # Test file writing
         new_file = "demo_output.py"
         content = 'print("This is a demo file created by Nexus CLI")'
         response = cli._handle_write_file([new_file, content])
-        print(f"\n✍️  Writing to {new_file}")
-        print(f"✅ {response}")
+        print(f"\n  Writing to {new_file}")
+        print(f" {response}")
         
         # Clean up
         if os.path.exists(new_file):
@@ -73,7 +73,7 @@ def add_numbers(a, b):
 
 def demo_code_analysis():
     """Demonstrate code analysis capabilities."""
-    print("\n🔍 Demo: Code Analysis")
+    print("\n Demo: Code Analysis")
     print("-" * 40)
     
     cli = NexusCLI()
@@ -113,19 +113,19 @@ def is_prime(n):
     
     try:
         # Test code analysis
-        print(f"\n🔍 Analyzing file: {temp_file}")
+        print(f"\n Analyzing file: {temp_file}")
         response = cli._handle_analyze_code([temp_file])
-        print(f"✅ {response}")
+        print(f" {response}")
         
         # Test function extraction
         print(f"\n📋 Extracting functions from: {temp_file}")
         response = cli._handle_extract_functions([temp_file])
-        print(f"✅ {response}")
+        print(f" {response}")
         
         # Test class extraction
-        print(f"\n🏗️  Extracting classes from: {temp_file}")
+        print(f"\n  Extracting classes from: {temp_file}")
         response = cli._handle_extract_classes([temp_file])
-        print(f"✅ {response}")
+        print(f" {response}")
         
     finally:
         # Clean up temp file
@@ -134,7 +134,7 @@ def is_prime(n):
 
 def demo_project_management():
     """Demonstrate project management capabilities."""
-    print("\n🛠️  Demo: Project Management")
+    print("\n  Demo: Project Management")
     print("-" * 40)
     
     cli = NexusCLI()
@@ -142,12 +142,12 @@ def demo_project_management():
     # Test project structure
     print("\n📂 Project structure:")
     response = cli._handle_project_tree([])
-    print(f"✅ {response}")
+    print(f" {response}")
     
     # Test file listing
     print("\n📋 File listing:")
     response = cli._handle_list_files([])
-    print(f"✅ {response}")
+    print(f" {response}")
 
 def demo_natural_language():
     """Demonstrate natural language processing."""
@@ -164,13 +164,13 @@ def demo_natural_language():
     ]
     
     for query in test_queries:
-        print(f"\n❓ Query: {query}")
+        print(f"\n Query: {query}")
         response = cli._handle_natural_language(query)
-        print(f"🤖 Response: {response[:200]}...")
+        print(f" Response: {response[:200]}...")
 
 def main():
     """Run all demos."""
-    print("🚀 Nexus CLI Demo")
+    print(" Nexus CLI Demo")
     print("=" * 50)
     
     try:
@@ -181,11 +181,11 @@ def main():
         demo_project_management()
         demo_natural_language()
         
-        print("\n🎉 All demos completed successfully!")
-        print("\n💡 To try the interactive CLI, run: python nexus_cli.py")
+        print("\n All demos completed successfully!")
+        print("\n To try the interactive CLI, run: python nexus_cli.py")
         
     except Exception as e:
-        print(f"\n❌ Demo failed: {e}")
+        print(f"\n Demo failed: {e}")
         print("Make sure you have trained the model first: python train_nexus_model.py --create-data")
 
 if __name__ == "__main__":

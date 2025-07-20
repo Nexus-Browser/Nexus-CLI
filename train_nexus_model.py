@@ -343,7 +343,7 @@ def main():
     # Setup logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     
-    print("🚀 Fast Training Mode - Optimized for CPU")
+    print(" Fast Training Mode - Optimized for CPU")
     print(f"Model: {args.model_name}")
     print(f"Epochs: {args.epochs}")
     print(f"Batch size: {args.batch_size}")
@@ -414,7 +414,7 @@ def main():
         tokenizer.save_pretrained(args.output_dir)
         
         logging.info("Training completed successfully!")
-        print("✅ Training completed! Model saved to:", args.output_dir)
+        print(" Training completed! Model saved to:", args.output_dir)
         
     except Exception as e:
         logging.error(f"Training failed: {e}")

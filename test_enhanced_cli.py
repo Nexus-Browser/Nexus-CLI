@@ -35,13 +35,13 @@ def test_code_generation():
     ]
     
     for test_case in test_cases:
-        print(f"\n📝 Testing: {test_case}")
+        print(f"\n Testing: {test_case}")
         stdout, stderr = run_cli_command(test_case)
         
         if "Code generated successfully" in stdout:
-            print("✅ Code generation working")
+            print(" Code generation working")
         else:
-            print("❌ Code generation failed")
+            print(" Code generation failed")
             print(f"Error: {stderr}")
 
 def test_file_operations():
@@ -69,27 +69,27 @@ class TestClass:
     stdout, stderr = run_cli_command("read test_file.py")
     
     if "File test_file.py read successfully" in stdout:
-        print("✅ File read working")
+        print(" File read working")
     else:
-        print("❌ File read failed")
+        print(" File read failed")
     
     # Test analyze operation
-    print("🔍 Testing code analysis...")
+    print(" Testing code analysis...")
     stdout, stderr = run_cli_command("analyze test_file.py")
     
     if "Code analysis completed" in stdout:
-        print("✅ Code analysis working")
+        print(" Code analysis working")
     else:
-        print("❌ Code analysis failed")
+        print(" Code analysis failed")
     
     # Test functions extraction
     print("📋 Testing functions extraction...")
     stdout, stderr = run_cli_command("functions test_file.py")
     
     if "Found" in stdout and "functions" in stdout:
-        print("✅ Functions extraction working")
+        print(" Functions extraction working")
     else:
-        print("❌ Functions extraction failed")
+        print(" Functions extraction failed")
     
     # Clean up
     os.remove("test_file.py")
@@ -99,22 +99,22 @@ def test_project_operations():
     print("\n🧪 Testing Project Operations...")
     
     # Test list files
-    print("📁 Testing file listing...")
+    print(" Testing file listing...")
     stdout, stderr = run_cli_command("list")
     
     if "Listed" in stdout and "files" in stdout:
-        print("✅ File listing working")
+        print(" File listing working")
     else:
-        print("❌ File listing failed")
+        print(" File listing failed")
     
     # Test project tree
     print("🌳 Testing project tree...")
     stdout, stderr = run_cli_command("tree")
     
     if "Project tree displayed successfully" in stdout:
-        print("✅ Project tree working")
+        print(" Project tree working")
     else:
-        print("❌ Project tree failed")
+        print(" Project tree failed")
 
 def test_conversation():
     """Test conversation features."""
@@ -125,26 +125,26 @@ def test_conversation():
     stdout, stderr = run_cli_command("What is a variable in programming?")
     
     if "variable" in stdout.lower() or "Variable" in stdout:
-        print("✅ Natural language processing working")
+        print(" Natural language processing working")
     else:
-        print("❌ Natural language processing failed")
+        print(" Natural language processing failed")
 
 def test_help_and_system():
     """Test help and system commands."""
     print("\n🧪 Testing Help and System Commands...")
     
     # Test help
-    print("❓ Testing help command...")
+    print(" Testing help command...")
     stdout, stderr = run_cli_command("help")
     
     if "Available Commands" in stdout:
-        print("✅ Help system working")
+        print(" Help system working")
     else:
-        print("❌ Help system failed")
+        print(" Help system failed")
 
 def main():
     """Run all tests."""
-    print("🚀 Starting Enhanced Nexus CLI Tests")
+    print(" Starting Enhanced Nexus CLI Tests")
     print("=" * 50)
     
     try:
@@ -155,8 +155,8 @@ def main():
         test_help_and_system()
         
         print("\n" + "=" * 50)
-        print("🎉 All tests completed!")
-        print("\n✨ Enhanced Nexus CLI Features:")
+        print(" All tests completed!")
+        print("\n Enhanced Nexus CLI Features:")
         print("   • Intelligent code generation with AST analysis")
         print("   • Beautiful rich terminal output")
         print("   • Context-aware command suggestions")
@@ -167,7 +167,7 @@ def main():
         print("   • No GPT wrappers - pure open-source intelligence")
         
     except Exception as e:
-        print(f"\n❌ Test failed with error: {e}")
+        print(f"\n Test failed with error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

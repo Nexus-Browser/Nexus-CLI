@@ -74,20 +74,20 @@ typing-extensions
 
 def run_demo():
     """Run the enhanced CLI demo."""
-    print("🚀 Enhanced Nexus CLI Demo")
+    print(" Enhanced Nexus CLI Demo")
     print("=" * 60)
     print()
     
     # Create demo files
     create_demo_files()
     
-    print("📁 Created demo files:")
+    print(" Created demo files:")
     print("   • demo_module.py - Sample Python module")
     print("   • requirements.txt - Dependencies file")
     print()
     
     # Demo 1: Code Generation
-    print("🎯 Demo 1: Intelligent Code Generation")
+    print(" Demo 1: Intelligent Code Generation")
     print("-" * 40)
     
     code_examples = [
@@ -98,7 +98,7 @@ def run_demo():
     ]
     
     for example in code_examples:
-        print(f"\n💡 Generating: {example}")
+        print(f"\n Generating: {example}")
         result = subprocess.run(
             ['python', 'nexus_cli.py'],
             input=f"{example}\nexit\n",
@@ -108,12 +108,12 @@ def run_demo():
         )
         
         if "Code generated successfully" in result.stdout:
-            print("✅ Generated working code!")
+            print(" Generated working code!")
         else:
-            print("❌ Code generation failed")
+            print(" Code generation failed")
     
     # Demo 2: File Analysis
-    print("\n\n🔍 Demo 2: Advanced File Analysis")
+    print("\n\n Demo 2: Advanced File Analysis")
     print("-" * 40)
     
     analysis_commands = [
@@ -134,9 +134,9 @@ def run_demo():
         )
         
         if "successfully" in result.stdout or "Found" in result.stdout:
-            print("✅ Analysis completed!")
+            print(" Analysis completed!")
         else:
-            print("❌ Analysis failed")
+            print(" Analysis failed")
     
     # Demo 3: Project Operations
     print("\n\n📂 Demo 3: Project Operations")
@@ -149,7 +149,7 @@ def run_demo():
     ]
     
     for cmd in project_commands:
-        print(f"\n🛠️  Running: {cmd}")
+        print(f"\n  Running: {cmd}")
         result = subprocess.run(
             ['python', 'nexus_cli.py'],
             input=f"{cmd}\nexit\n",
@@ -159,12 +159,12 @@ def run_demo():
         )
         
         if "successfully" in result.stdout or "Listed" in result.stdout:
-            print("✅ Operation completed!")
+            print(" Operation completed!")
         else:
-            print("❌ Operation failed")
+            print(" Operation failed")
     
     # Demo 4: Smart Features
-    print("\n\n🧠 Demo 4: Smart Features")
+    print("\n\n Demo 4: Smart Features")
     print("-" * 40)
     
     smart_commands = [
@@ -174,7 +174,7 @@ def run_demo():
     ]
     
     for cmd in smart_commands:
-        print(f"\n🤖 Running: {cmd}")
+        print(f"\n Running: {cmd}")
         result = subprocess.run(
             ['python', 'nexus_cli.py'],
             input=f"{cmd}\nexit\n",
@@ -184,9 +184,9 @@ def run_demo():
         )
         
         if "Available Commands" in result.stdout or "Detecting" in result.stdout:
-            print("✅ Smart feature working!")
+            print(" Smart feature working!")
         else:
-            print("❌ Smart feature failed")
+            print(" Smart feature failed")
     
     # Cleanup
     cleanup_files = ["demo_module.py", "requirements.txt"]
@@ -195,20 +195,20 @@ def run_demo():
             os.remove(file)
     
     print("\n" + "=" * 60)
-    print("🎉 Enhanced Nexus CLI Demo Complete!")
+    print(" Enhanced Nexus CLI Demo Complete!")
     print()
-    print("✨ Key Features Demonstrated:")
-    print("   • 🎯 Intelligent code generation from natural language")
-    print("   • 🔍 Advanced code analysis with AST parsing")
+    print(" Key Features Demonstrated:")
+    print("   •  Intelligent code generation from natural language")
+    print("   •  Advanced code analysis with AST parsing")
     print("   • 📊 Function and class extraction")
     print("   • 📂 Smart project operations")
-    print("   • 🛠️  Context-aware command execution")
-    print("   • 🎨 Beautiful rich terminal output")
-    print("   • 🧠 Memory and conversation management")
-    print("   • 🚀 Modern CLI patterns from successful tools")
+    print("   •   Context-aware command execution")
+    print("   •  Beautiful rich terminal output")
+    print("   •  Memory and conversation management")
+    print("   •  Modern CLI patterns from successful tools")
     print()
-    print("💡 No GPT wrappers - Pure open-source intelligence!")
-    print("🔧 Built with techniques from Warp, Cursor, and other successful CLI tools")
+    print(" No GPT wrappers - Pure open-source intelligence!")
+    print(" Built with techniques from Warp, Cursor, and other successful CLI tools")
 
 if __name__ == "__main__":
     run_demo() 

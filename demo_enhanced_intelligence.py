@@ -25,13 +25,13 @@ def run_cli_command(command, timeout=30):
 
 def demo_fallback_mode():
     """Demonstrate the intelligent fallback mode."""
-    print("🧠 Demo: Intelligent Fallback Mode")
+    print(" Demo: Intelligent Fallback Mode")
     print("=" * 50)
     print("This mode works without any API configuration.")
     print("It uses advanced pattern matching and AST analysis.\n")
     
     # Test code generation
-    print("📝 Testing Code Generation (Fallback Mode):")
+    print(" Testing Code Generation (Fallback Mode):")
     test_cases = [
         "code function to calculate fibonacci numbers",
         "code class for managing a todo list",
@@ -39,13 +39,13 @@ def demo_fallback_mode():
     ]
     
     for test_case in test_cases:
-        print(f"\n💡 Request: {test_case}")
+        print(f"\n Request: {test_case}")
         stdout, stderr = run_cli_command(test_case)
         
         if "Code generated successfully" in stdout:
-            print("✅ Generated intelligent code!")
+            print(" Generated intelligent code!")
         else:
-            print("❌ Code generation failed")
+            print(" Code generation failed")
     
     # Test conversation
     print("\n💬 Testing Conversation (Fallback Mode):")
@@ -56,17 +56,17 @@ def demo_fallback_mode():
     ]
     
     for test in conversation_tests:
-        print(f"\n🤔 Question: {test}")
+        print(f"\n Question: {test}")
         stdout, stderr = run_cli_command(test)
         
         if "variable" in stdout.lower() or "function" in stdout.lower() or "class" in stdout.lower():
-            print("✅ Provided intelligent response!")
+            print(" Provided intelligent response!")
         else:
-            print("❌ Conversation failed")
+            print(" Conversation failed")
 
 def demo_enhanced_mode():
     """Demonstrate the enhanced mode with API integration."""
-    print("\n🚀 Demo: Enhanced Intelligence Mode")
+    print("\n Demo: Enhanced Intelligence Mode")
     print("=" * 50)
     print("This mode uses advanced AI capabilities for even smarter responses.")
     print("Configure your API key to enable this mode.\n")
@@ -75,10 +75,10 @@ def demo_enhanced_mode():
     api_key = os.getenv("OPENAI_API_KEY") or os.getenv("NEXUS_API_KEY")
     
     if api_key:
-        print("✅ API key detected - Enhanced mode available!")
+        print(" API key detected - Enhanced mode available!")
         
         # Test enhanced code generation
-        print("\n📝 Testing Enhanced Code Generation:")
+        print("\n Testing Enhanced Code Generation:")
         enhanced_tests = [
             "code create a complete REST API with authentication and database",
             "code implement a machine learning pipeline for text classification",
@@ -86,13 +86,13 @@ def demo_enhanced_mode():
         ]
         
         for test_case in enhanced_tests:
-            print(f"\n💡 Request: {test_case}")
+            print(f"\n Request: {test_case}")
             stdout, stderr = run_cli_command(test_case)
             
             if "Code generated successfully" in stdout:
-                print("✅ Generated production-ready code!")
+                print(" Generated production-ready code!")
             else:
-                print("❌ Enhanced generation failed")
+                print(" Enhanced generation failed")
         
         # Test enhanced conversation
         print("\n💬 Testing Enhanced Conversation:")
@@ -103,16 +103,16 @@ def demo_enhanced_mode():
         ]
         
         for test in enhanced_conversation:
-            print(f"\n🤔 Question: {test}")
+            print(f"\n Question: {test}")
             stdout, stderr = run_cli_command(test)
             
             if len(stdout) > 100:  # Enhanced responses are typically longer
-                print("✅ Provided detailed, enhanced response!")
+                print(" Provided detailed, enhanced response!")
             else:
-                print("❌ Enhanced conversation failed")
+                print(" Enhanced conversation failed")
     
     else:
-        print("⚠️  No API key detected - Enhanced mode not available")
+        print("  No API key detected - Enhanced mode not available")
         print("   The CLI will automatically use intelligent fallback mode")
         print("   Set OPENAI_API_KEY or NEXUS_API_KEY to enable enhanced features")
 
@@ -123,21 +123,21 @@ def demo_features_comparison():
     
     comparison = {
         "Code Generation": {
-            "Fallback Mode": "✅ Pattern-based generation\n✅ AST analysis\n✅ Multiple languages\n✅ Error handling",
-            "Enhanced Mode": "✅ Production-ready code\n✅ Best practices\n✅ Complex algorithms\n✅ Documentation"
+            "Fallback Mode": " Pattern-based generation\n AST analysis\n Multiple languages\n Error handling",
+            "Enhanced Mode": " Production-ready code\n Best practices\n Complex algorithms\n Documentation"
         },
         "Conversation": {
-            "Fallback Mode": "✅ Pre-defined responses\n✅ Programming topics\n✅ Basic explanations\n✅ Context awareness",
-            "Enhanced Mode": "✅ Detailed explanations\n✅ Code reviews\n✅ Best practices\n✅ Real-time assistance"
+            "Fallback Mode": " Pre-defined responses\n Programming topics\n Basic explanations\n Context awareness",
+            "Enhanced Mode": " Detailed explanations\n Code reviews\n Best practices\n Real-time assistance"
         },
         "Performance": {
-            "Fallback Mode": "✅ Instant responses\n✅ No network required\n✅ Always available\n✅ Lightweight",
-            "Enhanced Mode": "✅ Intelligent caching\n✅ Rate limiting\n✅ Graceful fallback\n✅ Advanced features"
+            "Fallback Mode": " Instant responses\n No network required\n Always available\n Lightweight",
+            "Enhanced Mode": " Intelligent caching\n Rate limiting\n Graceful fallback\n Advanced features"
         }
     }
     
     for feature, modes in comparison.items():
-        print(f"\n🔧 {feature}:")
+        print(f"\n {feature}:")
         for mode, capabilities in modes.items():
             print(f"   {mode}:")
             for capability in capabilities.split('\n'):
@@ -145,7 +145,7 @@ def demo_features_comparison():
 
 def demo_setup_instructions():
     """Show setup instructions for enhanced mode."""
-    print("\n⚙️ Setup Instructions for Enhanced Mode")
+    print("\n Setup Instructions for Enhanced Mode")
     print("=" * 50)
     
     print("To enable enhanced intelligence:")
@@ -161,11 +161,11 @@ def demo_setup_instructions():
     print()
     print("4. Run the CLI - it will automatically detect and use enhanced mode")
     print()
-    print("💡 The CLI works perfectly in fallback mode while you configure enhanced features!")
+    print(" The CLI works perfectly in fallback mode while you configure enhanced features!")
 
 def main():
     """Run the enhanced intelligence demo."""
-    print("🎯 Enhanced Nexus CLI Intelligence Demo")
+    print(" Enhanced Nexus CLI Intelligence Demo")
     print("=" * 60)
     print()
     
@@ -183,18 +183,18 @@ def main():
         demo_setup_instructions()
         
         print("\n" + "=" * 60)
-        print("🎉 Enhanced Intelligence Demo Complete!")
+        print(" Enhanced Intelligence Demo Complete!")
         print()
-        print("✨ Key Takeaways:")
+        print(" Key Takeaways:")
         print("   • Fallback mode provides intelligent, reliable functionality")
         print("   • Enhanced mode adds production-ready code generation")
         print("   • Both modes are seamless and professional")
         print("   • Configuration is optional and subtle")
         print()
-        print("🚀 Ready to experience the future of CLI coding assistants!")
+        print(" Ready to experience the future of CLI coding assistants!")
         
     except Exception as e:
-        print(f"\n❌ Demo failed with error: {e}")
+        print(f"\n Demo failed with error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

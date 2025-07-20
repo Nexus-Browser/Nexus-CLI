@@ -15,7 +15,7 @@ def run_command(command, description):
     print(f"🔄 {description}...")
     try:
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        print(f"✅ {description} completed successfully")
+        print(f" {description} completed successfully")
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ {description} failed: {e}")
@@ -28,7 +28,7 @@ def check_python_version():
     if version.major < 3 or (version.major == 3 and version.minor < 8):
         print("❌ Python 3.8 or higher is required")
         return False
-    print(f"✅ Python {version.major}.{version.minor}.{version.micro} detected")
+    print(f" Python {version.major}.{version.minor}.{version.micro} detected")
     return True
 
 def create_directories():
@@ -36,7 +36,7 @@ def create_directories():
     directories = ["data", "memory", "model"]
     for directory in directories:
         os.makedirs(directory, exist_ok=True)
-    print("✅ Directories created")
+    print(" Directories created")
 
 def install_dependencies():
     """Install required dependencies."""
@@ -90,11 +90,11 @@ def create_sample_data():
     with open("data/custom_training_data.json", "w") as f:
         json.dump(sample_data, f, indent=2)
     
-    print(f"✅ Created {len(sample_data)} sample training examples")
+    print(f" Created {len(sample_data)} sample training examples")
 
 def train_basic_model():
     """Train a basic model for immediate use."""
-    print("🚀 Training basic model (this may take a few minutes)...")
+    print(" Training basic model (this may take a few minutes)...")
     return run_command(
         "python train_nexus_model.py --epochs 2 --batch-size 2 --max-length 256",
         "Training basic model"
@@ -108,7 +108,7 @@ def test_cli():
 
 def main():
     """Main setup function."""
-    print("🚀 Nexus CLI Quick Start Setup")
+    print(" Nexus CLI Quick Start Setup")
     print("=" * 50)
     
     # Check Python version
@@ -128,12 +128,12 @@ def main():
     
     # Train basic model
     if not train_basic_model():
-        print("⚠️  Model training failed, but you can still use the CLI with the base model")
+        print("  Model training failed, but you can still use the CLI with the base model")
     
     # Test CLI
     test_cli()
     
-    print("\n🎉 Setup completed!")
+    print("\n Setup completed!")
     print("\n📖 Next steps:")
     print("1. Run the CLI: python nexus_cli.py")
     print("2. Try some commands:")
@@ -142,7 +142,7 @@ def main():
     print("   - help")
     print("3. Train a better model: python train_nexus_model.py --epochs 5")
     
-    print("\n📚 For more information, see README.md")
+    print("\n For more information, see README.md")
 
 if __name__ == "__main__":
     main() 

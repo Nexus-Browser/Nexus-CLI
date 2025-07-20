@@ -26,7 +26,7 @@ def test_model():
             print("❌ Model failed to load!")
             return False
         
-        print("✅ Model loaded successfully!")
+        print(" Model loaded successfully!")
         
         # Test chat generation
         print("\nTesting chat generation...")
@@ -38,7 +38,7 @@ def test_model():
         code_response = model.generate_code("create a function to add two numbers", "python")
         print(f"Code response: {code_response}")
         
-        print("\n✅ All tests passed!")
+        print("\n All tests passed!")
         return True
         
     except Exception as e:

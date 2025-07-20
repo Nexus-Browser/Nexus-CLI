@@ -15,21 +15,21 @@ def test_imports():
     
     try:
         from model.nexus_model import NexusModel
-        print("✅ NexusModel imported successfully")
+        print(" NexusModel imported successfully")
     except ImportError as e:
         print(f"❌ Failed to import NexusModel: {e}")
         return False
     
     try:
         from tools import FileTools, CodeTools, ProjectTools, MemoryTools
-        print("✅ Tools imported successfully")
+        print(" Tools imported successfully")
     except ImportError as e:
         print(f"❌ Failed to import tools: {e}")
         return False
     
     try:
         from nexus_cli import NexusCLI
-        print("✅ NexusCLI imported successfully")
+        print(" NexusCLI imported successfully")
     except ImportError as e:
         print(f"❌ Failed to import NexusCLI: {e}")
         return False
@@ -38,7 +38,7 @@ def test_imports():
 
 def test_file_tools():
     """Test file operations."""
-    print("\n📁 Testing file tools...")
+    print("\n Testing file tools...")
     
     from tools import FileTools
     file_tools = FileTools()
@@ -50,7 +50,7 @@ def test_file_tools():
     # Write file
     success = file_tools.write_file(test_file, test_content)
     if success:
-        print("✅ File writing successful")
+        print(" File writing successful")
     else:
         print("❌ File writing failed")
         return False
@@ -58,7 +58,7 @@ def test_file_tools():
     # Read file
     content = file_tools.read_file(test_file)
     if content == test_content:
-        print("✅ File reading successful")
+        print(" File reading successful")
     else:
         print("❌ File reading failed")
         return False
@@ -71,7 +71,7 @@ def test_file_tools():
 
 def test_code_tools():
     """Test code analysis tools."""
-    print("\n🔍 Testing code tools...")
+    print("\n Testing code tools...")
     
     from tools import CodeTools
     code_tools = CodeTools()
@@ -82,14 +82,14 @@ def test_code_tools():
     
     is_valid, message = code_tools.validate_python_syntax(valid_code)
     if is_valid:
-        print("✅ Valid syntax detection working")
+        print(" Valid syntax detection working")
     else:
         print(f"❌ Valid syntax detection failed: {message}")
         return False
     
     is_valid, message = code_tools.validate_python_syntax(invalid_code)
     if not is_valid:
-        print("✅ Invalid syntax detection working")
+        print(" Invalid syntax detection working")
     else:
         print(f"❌ Invalid syntax detection failed: {message}")
         return False
@@ -104,7 +104,7 @@ def add(a, b):
 """
     functions = code_tools.extract_functions(test_code)
     if len(functions) == 2:
-        print("✅ Function extraction working")
+        print(" Function extraction working")
     else:
         print(f"❌ Function extraction failed: found {len(functions)} functions")
         return False
@@ -113,7 +113,7 @@ def add(a, b):
 
 def test_project_tools():
     """Test project management tools."""
-    print("\n🛠️  Testing project tools...")
+    print("\n  Testing project tools...")
     
     from tools import ProjectTools
     project_tools = ProjectTools()
@@ -121,7 +121,7 @@ def test_project_tools():
     # Test command execution
     returncode, stdout, stderr = project_tools.run_command("echo 'test'")
     if returncode == 0 and "test" in stdout:
-        print("✅ Command execution working")
+        print(" Command execution working")
     else:
         print(f"❌ Command execution failed: {stderr}")
         return False
@@ -129,7 +129,7 @@ def test_project_tools():
     # Test project structure
     structure = project_tools.get_project_structure(".", max_depth=1)
     if isinstance(structure, dict):
-        print("✅ Project structure analysis working")
+        print(" Project structure analysis working")
     else:
         print("❌ Project structure analysis failed")
         return False
@@ -138,7 +138,7 @@ def test_project_tools():
 
 def test_memory_tools():
     """Test memory management."""
-    print("\n🧠 Testing memory tools...")
+    print("\n Testing memory tools...")
     
     from tools import MemoryTools
     memory_tools = MemoryTools("test_memory.json")
@@ -147,7 +147,7 @@ def test_memory_tools():
     memory_tools.add_conversation("Hello", "Hi there!", "test context")
     context = memory_tools.get_recent_context()
     if "Hello" in context and "Hi there!" in context:
-        print("✅ Conversation memory working")
+        print(" Conversation memory working")
     else:
         print("❌ Conversation memory failed")
         return False
@@ -156,7 +156,7 @@ def test_memory_tools():
     memory_tools.update_project_context("test_key", "test_value")
     value = memory_tools.get_project_context("test_key")
     if value == "test_value":
-        print("✅ Project context working")
+        print(" Project context working")
     else:
         print("❌ Project context failed")
         return False
@@ -169,7 +169,7 @@ def test_memory_tools():
 
 def test_config():
     """Test configuration loading."""
-    print("\n⚙️  Testing configuration...")
+    print("\n  Testing configuration...")
     
     if not os.path.exists("model_config.json"):
         print("❌ model_config.json not found")
@@ -185,7 +185,7 @@ def test_config():
                 print(f"❌ Missing required config key: {key}")
                 return False
         
-        print("✅ Configuration loading successful")
+        print(" Configuration loading successful")
         return True
         
     except Exception as e:
@@ -194,7 +194,7 @@ def test_config():
 
 def main():
     """Run all tests."""
-    print("🚀 Nexus CLI Component Tests")
+    print(" Nexus CLI Component Tests")
     print("=" * 40)
     
     tests = [
@@ -221,13 +221,13 @@ def main():
     print(f"\n📊 Test Results: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 All tests passed! Nexus CLI is ready to use.")
-        print("\n💡 Next steps:")
+        print(" All tests passed! Nexus CLI is ready to use.")
+        print("\n Next steps:")
         print("1. Create training data: python train_nexus_model.py --create-data")
         print("2. Train the model: python train_nexus_model.py")
         print("3. Run the CLI: python nexus_cli.py")
     else:
-        print("⚠️  Some tests failed. Please check the errors above.")
+        print("  Some tests failed. Please check the errors above.")
     
     return passed == total
 

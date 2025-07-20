@@ -43,18 +43,16 @@ class IntelligentNexusCLI:
         self.model_available = False
         try:
             self.model = NexusModel()
-            # Check if model and pipeline are loaded
-            if (
-                hasattr(self.model, 'llm') and 
-                hasattr(self.model.llm, 'model') and self.model.llm.model is not None and
-                hasattr(self.model.llm, 'pipe') and self.model.llm.pipe is not None
-            ):
+            # Check if the iLLuMinator API is available
+            if self.model.is_available():
                 self.model_available = True
+                model_info = self.model.get_model_info()
+                self.console.print(f"[green]✓ {model_info['name']} connected successfully![/green]")
             else:
-                self.console.print("[red]Error: Model or pipeline not loaded properly.[/red]")
+                self.console.print("[yellow]WARNING: iLLuMinator API not available, using basic mode...[/yellow]")
                 self.model_available = False
         except Exception as e:
-            self.console.print(f"[red]Error loading model: {e}\nFalling back to basic mode...[/red]")
+            self.console.print(f"[red]Error loading iLLuMinator model: {e}\nFalling back to basic mode...[/red]")
             self.model = None
             self.model_available = False
         self.memory = MemoryTools()
@@ -78,21 +76,27 @@ class IntelligentNexusCLI:
         self._load_context()
     
     def _load_model(self):
-        """Load the Nexus AI model with progress indication."""
+        """Load the iLLuMinator AI model with progress indication."""
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=self.console
         ) as progress:
-            task = progress.add_task("Loading Nexus AI model...", total=None)
+            task = progress.add_task("Connecting to iLLuMinator-4.7B API...", total=None)
             try:
                 self.model = NexusModel()
-                progress.update(task, description="✓ Model loaded successfully!")
+                if self.model.is_available():
+                    progress.update(task, description="✓ iLLuMinator API connected successfully!")
+                    self.model_available = True
+                else:
+                    progress.update(task, description="WARNING: API connection failed, using basic mode")
+                    self.model_available = False
                 time.sleep(0.5)
             except Exception as e:
-                self.console.print(f"[red]Error loading model: {e}[/red]")
+                self.console.print(f"[red]Error connecting to iLLuMinator API: {e}[/red]")
                 self.console.print("[yellow]Falling back to basic mode...[/yellow]")
                 self.model = None
+                self.model_available = False
     
     def _load_context(self):
         """Load context from project and environment."""
@@ -147,7 +151,7 @@ class IntelligentNexusCLI:
         layout.split_column(
             Layout(Panel.fit(
                 "[bold blue]Nexus CLI - Intelligent AI Coding Assistant[/bold blue]\n"
-                "[dim]Powered by advanced code generation and analysis[/dim]",
+                "[dim]Powered by iLLuMinator-4.7B - Advanced code generation without GPU requirements[/dim]",
                 border_style="blue"
             ), name="header"),
             Layout(name="body")
@@ -157,13 +161,13 @@ class IntelligentNexusCLI:
         if self.current_project:
             project_info = f"[green]Project: {self.current_project}[/green]"
             if self.context.get("has_requirements.txt"):
-                project_info += " [yellow]📦 Python[/yellow]"
+                project_info += " [yellow]Python[/yellow]"
             if self.context.get("has_package.json"):
-                project_info += " [yellow]📦 Node.js[/yellow]"
+                project_info += " [yellow]Node.js[/yellow]"
             if self.context.get("has_Cargo.toml"):
-                project_info += " [yellow]📦 Rust[/yellow]"
+                project_info += " [yellow]Rust[/yellow]"
             if self.context.get("has_go.mod"):
-                project_info += " [yellow]📦 Go[/yellow]"
+                project_info += " [yellow]Go[/yellow]"
             
             layout["body"].update(Panel(project_info, border_style="green"))
         
@@ -186,7 +190,7 @@ class IntelligentNexusCLI:
   • [code]tree [directory][/code] - Show project structure tree
   
 [cyan]Code Analysis:[/cyan]
-  • [code]analyze <file>[/code] - Intelligent code analysis with AST parsing
+  • [code]analyze <file>[/code] - Intelligent code analysis with iLLuMinator-4.7B
   • [code]functions <file>[/code] - Extract and analyze functions
   • [code]classes <file>[/code] - Extract and analyze classes
   
@@ -196,17 +200,18 @@ class IntelligentNexusCLI:
   • [code]install[/code] - Smart dependency installation
   
 [cyan]Conversation:[/cyan]
-  • [code]chat[/code] - Start intelligent conversation mode
+  • [code]chat[/code] - Start intelligent conversation with iLLuMinator-4.7B
   • [code]history[/code] - Show conversation and command history
   • [code]clear[/code] - Clear conversation history
   
 [cyan]System:[/cyan]
   • [code]help[/code] - Show this help
   • [code]exit[/code] - Exit Nexus CLI
-  • [code]train[/code] - Train/fine-tune the model
+  • [code]status[/code] - Check iLLuMinator API status
 
-[dim]💡 Tip: I understand natural language! Try "create a function to add numbers" or "build a web server"[/dim]
-[dim]🔍 Smart Features: Context awareness, command suggestions, intelligent error handling[/dim]
+[dim]Powered by iLLuMinator-4.7B - Advanced AI without GPU requirements![/dim]
+[dim]Tip: I understand natural language! Try "create a function to add numbers" or "build a web server"[/dim]
+[dim]Smart Features: Context awareness, command suggestions, intelligent error handling[/dim]
 """
         self.console.print(Panel(help_text, title="[bold]Nexus CLI Help[/bold]", border_style="cyan"))
     
@@ -274,7 +279,7 @@ class IntelligentNexusCLI:
                 "clear": self._handle_clear_history,
                 "help": lambda args: (self.show_help(), "")[1],
                 "exit": lambda args: "exit",
-                "train": self._handle_train_model
+                "status": self._handle_model_status
             }
             
             if command in command_handlers:
@@ -298,7 +303,7 @@ class IntelligentNexusCLI:
     def _handle_code_generation(self, args: List[str]) -> str:
         """Handle intelligent code generation requests."""
         if not self.model_available:
-            return "[red]AI model not available. Only basic commands are supported.[/red]"
+            return "[red]iLLuMinator-4.7B API not available. Only basic commands are supported.[/red]"
         if not args:
             return "[red]Please provide an instruction for code generation.[/red]"
         
@@ -338,7 +343,7 @@ class IntelligentNexusCLI:
                 TextColumn("[progress.description]{task.description}"),
                 console=self.console
             ) as progress:
-                task = progress.add_task(f"Generating {language} code...", total=None)
+                task = progress.add_task(f"Generating {language} code with iLLuMinator-4.7B...", total=None)
                 
                 # Generate code
                 code = self.model.generate_code(instruction, language)
@@ -458,12 +463,12 @@ class IntelligentNexusCLI:
             
             # Add directories first
             for dir_name in sorted(directories):
-                table.add_row(f"📁 {dir_name}", "Directory", "")
+                table.add_row(f"[DIR] {dir_name}", "Directory", "")
             
             # Add files
             for file_name, size in sorted(files):
                 size_str = self._format_file_size(size)
-                table.add_row(f"📄 {file_name}", "File", size_str)
+                table.add_row(f"[FILE] {file_name}", "File", size_str)
             
             self.console.print(table)
             
@@ -496,7 +501,7 @@ class IntelligentNexusCLI:
             return f"[red]Directory not found: {root_dir}[/red]"
         
         try:
-            tree = Tree(f"📁 {root_dir}")
+            tree = Tree(f"[DIR] {root_dir}")
             
             # Directories to exclude
             exclude_dirs = {
@@ -531,10 +536,10 @@ class IntelligentNexusCLI:
                     for item in items:
                         item_path = os.path.join(directory, item)
                         if os.path.isdir(item_path):
-                            child = parent_node.add(f"📁 {item}")
+                            child = parent_node.add(f"[DIR] {item}")
                             build_tree_node(item_path, child, depth + 1)
                         else:
-                            parent_node.add(f"📄 {item}")
+                            parent_node.add(f"[FILE] {item}")
                 except PermissionError:
                     # Skip directories we can't access
                     pass
@@ -805,8 +810,9 @@ class IntelligentNexusCLI:
     def _handle_chat_mode(self, args: List[str]) -> str:
         """Handle intelligent chat mode."""
         if not self.model_available:
-            return "[red]AI model not available. Only basic commands are supported.[/red]"
-        self.console.print("[bold green]Entering intelligent chat mode. Type 'exit' to return to command mode.[/bold green]")
+            return "[red]iLLuMinator-4.7B API not available. Only basic commands are supported.[/red]"
+        
+        self.console.print("[bold green]Entering chat mode with iLLuMinator-4.7B. Type 'exit' to return to command mode.[/bold green]")
 
         while True:
             try:
@@ -849,30 +855,42 @@ class IntelligentNexusCLI:
         self.command_history.clear()
         return "[green]History cleared.[/green]"
     
-    def _handle_train_model(self, args: List[str]) -> str:
-        """Handle model training."""
-        self.console.print("[yellow]Starting model training...[/yellow]")
+    def _handle_model_status(self, args: List[str]) -> str:
+        """Handle model status check."""
+        if not self.model:
+            return "[red]No model loaded[/red]"
         
-        try:
-            # Run the training script
-            returncode, stdout, stderr = self.project_tools.run_command("python train_nexus_model.py --sources custom codealpaca --epochs 2 --batch-size 4 --max-length 256 --max-samples 300")
-            
-            if returncode == 0:
-                self.console.print(f"[green]Training completed successfully![/green]\n{stdout}")
-                return "[green]Model training completed successfully.[/green]"
-            else:
-                self.console.print(f"[red]Training failed:[/red]\n{stderr}")
-                return "[red]Model training failed.[/red]"
-                
-        except Exception as e:
-            return f"[red]Error during training: {str(e)}[/red]"
+        model_info = self.model.get_model_info()
+        
+        # Create status table
+        table = Table(title="iLLuMinator-4.7B Status")
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="green")
+        
+        for key, value in model_info.items():
+            table.add_row(key.replace("_", " ").title(), str(value))
+        
+        # Test API connection
+        is_working = self.model.test_connection()
+        status_color = "green" if is_working else "red"
+        status_text = "✓ Connected" if is_working else "✗ Disconnected"
+        
+        table.add_row("Connection Test", f"[{status_color}]{status_text}[/{status_color}]")
+        
+        self.console.print(table)
+        
+        return f"[green]Model status: {'Available' if is_working else 'Unavailable'}[/green]"
+    
+    def _handle_train_model(self, args: List[str]) -> str:
+        """Handle model training - no longer needed for API model."""
+        return "[yellow]Training is not required for the iLLuMinator-4.7B API model. The model is already trained and deployed![/yellow]"
     
     def _handle_natural_language(self, user_input: str) -> str:
-        """Handle natural language input using the AI model."""
+        """Handle natural language input using the iLLuMinator-4.7B API."""
         if not self.model_available:
-            return "[red]AI model not available. Only basic commands are supported.[/red]"
+            return "[red]iLLuMinator-4.7B API not available. Only basic commands are supported.[/red]"
         if not self.model:
-            return "[red]AI model not available. Please ensure the model is loaded.[/red]"
+            return "[red]iLLuMinator model not available. Please check your connection.[/red]"
         
         try:
             # Generate response first
@@ -941,12 +959,7 @@ class IntelligentNexusCLI:
                 if user_input.lower() in ['exit', 'quit']:
                     self.console.print("[yellow]Goodbye![/yellow]")
                     break
-                if user_input.lower() == 'model_status':
-                    self.console.print(f"model_available: {self.model_available}")
-                    self.console.print(f"model: {getattr(self.model, 'model', None)}")
-                    self.console.print(f"llm.model: {getattr(getattr(self.model, 'llm', None), 'model', None)}")
-                    self.console.print(f"llm.pipe: {getattr(getattr(self.model, 'llm', None), 'pipe', None)}")
-                    continue
+                
                 response = self.process_command(user_input)
                 if response == "exit":
                     self.console.print("[yellow]Goodbye![/yellow]")

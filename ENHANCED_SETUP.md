@@ -2,7 +2,7 @@
 
 This guide explains how to configure the enhanced intelligent features of Nexus CLI.
 
-## 🚀 Enhanced Features
+##  Enhanced Features
 
 Nexus CLI now includes enhanced code generation and conversation capabilities that provide:
 
@@ -11,7 +11,7 @@ Nexus CLI now includes enhanced code generation and conversation capabilities th
 - **Context-aware responses** that understand your project structure
 - **Advanced error handling** and best practices
 
-## ⚙️ Configuration
+##  Configuration
 
 ### Option 1: Environment Variables (Recommended)
 
@@ -48,7 +48,7 @@ If no API key is configured, Nexus CLI will automatically use the intelligent fa
 - AST-based code analysis
 - All other features working normally
 
-## 🔧 Installation
+##  Installation
 
 1. **Install dependencies:**
    ```bash
@@ -64,7 +64,7 @@ If no API key is configured, Nexus CLI will automatically use the intelligent fa
    python nexus_cli.py
    ```
 
-## 🎯 Usage Examples
+##  Usage Examples
 
 ### Enhanced Code Generation
 
@@ -99,14 +99,14 @@ nexus> Review this code and suggest improvements for performance
 - **Fallback mode** ensures the CLI works even without API access
 - **No data logging** - all conversations remain private
 
-## 🚀 Performance Features
+##  Performance Features
 
 - **Intelligent caching** - Responses are cached to avoid duplicate API calls
 - **Rate limiting** - Built-in protection against excessive API usage
 - **Timeout handling** - Graceful fallback if API is unavailable
 - **Error recovery** - Automatic fallback to local intelligence
 
-## 🔧 Advanced Configuration
+##  Advanced Configuration
 
 ### Custom Models
 
@@ -137,7 +137,7 @@ Adjust performance settings in `model/api_config.json`:
 }
 ```
 
-## 🛠️ Troubleshooting
+##  Troubleshooting
 
 ### API Key Issues
 
@@ -164,7 +164,7 @@ Common error messages and solutions:
 - `"Enhanced generation failed"` - System will automatically use fallback
 - `"Configuration error"` - Check `model/api_config.json` format
 
-## 🎉 Ready to Use!
+##  Ready to Use!
 
 Once configured, Nexus CLI will provide:
 
@@ -177,4 +177,4 @@ The enhanced features are designed to be **subtle and professional** - other dev
 
 ---
 
-**💡 Tip:** Start with the basic setup and gradually explore the enhanced features. The CLI works perfectly in fallback mode while you configure the advanced capabilities. 
+** Tip:** Start with the basic setup and gradually explore the enhanced features. The CLI works perfectly in fallback mode while you configure the advanced capabilities. 

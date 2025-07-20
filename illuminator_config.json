@@ -1,0 +1,48 @@
+{
+    "model_config": {
+        "name": "iLLuMinator-4.7B",
+        "version": "1.0",
+        "author": "Anish Paleja",
+        "repository": "https://github.com/Anipaleja/iLLuMinator-4.7B",
+        "description": "Advanced 4.7B parameter model for code generation and assistance",
+        "api_endpoint": "https://api.illuminator.dev/v1",
+        "model_type": "causal-lm",
+        "architecture": "transformer",
+        "parameters": "4.7B",
+        "training_data": "Code repositories, documentation, and programming tutorials",
+        "capabilities": [
+            "Code generation in 20+ languages",
+            "Code analysis and explanation", 
+            "Debugging assistance",
+            "Documentation generation",
+            "Conversational programming help"
+        ],
+        "supported_languages": [
+            "Python", "JavaScript", "TypeScript", "Java", "C++", "C",
+            "Go", "Rust", "PHP", "Ruby", "Swift", "Kotlin", "Scala",
+            "R", "MATLAB", "HTML", "CSS", "SQL", "Bash", "PowerShell"
+        ],
+        "performance": {
+            "inference_speed": "Fast (API-based)",
+            "memory_usage": "Low (no local GPU required)",
+            "accuracy": "High for code generation tasks"
+        }
+    },
+    "api_config": {
+        "max_tokens": 2048,
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
+        "timeout": 30
+    },
+    "features": {
+        "code_completion": true,
+        "code_explanation": true,
+        "bug_detection": true,
+        "refactoring_suggestions": true,
+        "documentation_generation": true,
+        "test_generation": true,
+        "performance_optimization": true
+    }
+}
