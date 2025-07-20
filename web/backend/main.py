@@ -85,7 +85,8 @@ if FASTAPI_AVAILABLE:
 
 # Request/Response models
 class CodeGenerationRequest(BaseModel):
-    instruction: str
+    instruction: Optional[str] = None
+    prompt: Optional[str] = None  # Alternative field for frontend compatibility
     language: str = "python"
     session_id: Optional[str] = None
 
@@ -212,6 +213,16 @@ async def create_session():
         status="created"
     )
 
+@app.post("/api/session/create")
+async def create_session_alt():
+    """Create a new session (alternative endpoint for frontend compatibility)"""
+    session_id = await db.create_session()
+    return SessionResponse(
+        session_id=session_id,
+        timestamp=datetime.now(),
+        status="created"
+    )
+
 @app.get("/api/sessions/{session_id}")
 async def get_session(session_id: str):
     """Get session history"""
@@ -227,15 +238,20 @@ async def generate_code(request: CodeGenerationRequest):
         raise HTTPException(status_code=503, detail="iLLuMinator model not available")
     
     try:
+        # Use prompt if provided, otherwise instruction
+        instruction_text = request.prompt or request.instruction
+        if not instruction_text:
+            raise HTTPException(status_code=400, detail="Either 'instruction' or 'prompt' field is required")
+        
         # Generate code
-        code = nexus_model.generate_code(request.instruction, request.language)
+        code = nexus_model.generate_code(instruction_text, request.language)
         
         # Save to session if provided
         if request.session_id:
             await db.add_to_session(request.session_id, {
                 "type": "code_generation",
                 "input": {
-                    "instruction": request.instruction,
+                    "instruction": instruction_text,
                     "language": request.language
                 },
                 "output": code,
@@ -245,7 +261,7 @@ async def generate_code(request: CodeGenerationRequest):
         return {
             "code": code,
             "language": request.language,
-            "instruction": request.instruction,
+            "instruction": instruction_text,
             "timestamp": datetime.now(),
             "model": "iLLuMinator-4.7B"
         }

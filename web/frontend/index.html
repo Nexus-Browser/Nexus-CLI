@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus CLI - Web Terminal</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Prism.js for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Main Application -->
+    <div id="app">
+        <!-- Header Bar -->
+        <header class="header-bar">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-terminal"></i>
+                    <span>Nexus CLI</span>
+                </div>
+                <div class="connection-status" id="connection-status">
+                    <div class="status-dot"></div>
+                    <span>Connected</span>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <div class="tab-bar">
+                    <div class="tab active" data-tab="terminal">
+                        <i class="fas fa-terminal"></i>
+                        <span>Terminal</span>
+                    </div>
+                    <div class="tab" data-tab="chat">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat</span>
+                    </div>
+                    <div class="tab" data-tab="code">
+                        <i class="fas fa-code"></i>
+                        <span>Code Gen</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <button class="btn-icon" id="settings-btn">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="btn-icon" id="fullscreen-btn">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Command Palette (Hidden by default) -->
+        <div class="command-palette" id="command-palette">
+            <div class="command-palette-input">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Type a command..." id="palette-input">
+            </div>
+            <div class="command-suggestions" id="command-suggestions">
+                <div class="suggestion-group">
+                    <div class="group-title">Quick Actions</div>
+                    <div class="suggestion" data-command="generate">
+                        <i class="fas fa-magic"></i>
+                        <span>Generate Code</span>
+                        <kbd>Ctrl+G</kbd>
+                    </div>
+                    <div class="suggestion" data-command="chat">
+                        <i class="fas fa-comments"></i>
+                        <span>Start Chat</span>
+                        <kbd>Ctrl+T</kbd>
+                    </div>
+                    <div class="suggestion" data-command="analyze">
+                        <i class="fas fa-search"></i>
+                        <span>Analyze Code</span>
+                        <kbd>Ctrl+A</kbd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Terminal View -->
+            <div class="view terminal-view active" id="terminal-view">
+                <div class="terminal-header">
+                    <div class="terminal-tabs">
+                        <div class="terminal-tab active">
+                            <span>nexus-cli</span>
+                            <button class="tab-close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <button class="new-tab-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="terminal-controls">
+                        <button class="btn-control" id="clear-terminal">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn-control" id="split-terminal">
+                            <i class="fas fa-columns"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="terminal-content" id="terminal-content">
+                    <div class="terminal-output" id="terminal-output">
+                        <div class="welcome-message">
+                            <div class="ascii-art">
+    ███╗   ██╗███████╗██╗  ██╗██╗   ██╗███████╗     ██████╗██╗     ██╗
+    ████╗  ██║██╔════╝╚██╗██╔╝██║   ██║██╔════╝    ██╔════╝██║     ██║
+    ██╔██╗ ██║█████╗   ╚███╔╝ ██║   ██║███████╗    ██║     ██║     ██║
+    ██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║╚════██║    ██║     ██║     ██║
+    ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╗███████╗██║
+    ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝╚══════╝╚═╝
+                            </div>
+                            <div class="welcome-text">
+                                <p>Welcome to <strong>Nexus CLI Web Terminal</strong></p>
+                                <p>Powered by <strong>iLLuMinator-4.7B</strong> AI Model</p>
+                                <p>Type <code>help</code> to get started or use <kbd>Ctrl+K</kbd> for command palette</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="terminal-input-line">
+                        <div class="prompt">
+                            <span class="prompt-user">nexus</span>
+                            <span class="prompt-separator">@</span>
+                            <span class="prompt-host">cli</span>
+                            <span class="prompt-path">~/</span>
+                            <span class="prompt-symbol">$</span>
+                        </div>
+                        <input type="text" 
+                               class="terminal-input" 
+                               id="terminal-input" 
+                               placeholder="Type your command here..."
+                               autocomplete="off"
+                               spellcheck="false">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat View -->
+            <div class="view chat-view" id="chat-view">
+                <div class="chat-header">
+                    <h2>
+                        <i class="fas fa-robot"></i>
+                        Chat with iLLuMinator-4.7B
+                    </h2>
+                    <button class="btn-control" id="clear-chat">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                
+                <div class="chat-content" id="chat-content">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message bot-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-header">
+                                    <span class="sender">iLLuMinator-4.7B</span>
+                                    <span class="timestamp">Now</span>
+                                </div>
+                                <div class="message-text">
+                                    Hello! I'm your AI coding assistant. I can help you with:
+                                    <ul>
+                                        <li>Code generation and debugging</li>
+                                        <li>Architecture advice and best practices</li>
+                                        <li>Code analysis and optimization</li>
+                                        <li>Technical questions and explanations</li>
+                                    </ul>
+                                    What would you like to work on today?
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea class="chat-input" 
+                                  id="chat-input" 
+                                  placeholder="Ask me anything about code..."
+                                  rows="1"></textarea>
+                        <button class="send-btn" id="send-chat">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Generation View -->
+            <div class="view code-view" id="code-view">
+                <div class="code-header">
+                    <h2>
+                        <i class="fas fa-magic"></i>
+                        Code Generation
+                    </h2>
+                    <div class="code-controls">
+                        <select id="language-select" class="control-select">
+                            <option value="python">Python</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="typescript">TypeScript</option>
+                            <option value="java">Java</option>
+                            <option value="cpp">C++</option>
+                            <option value="rust">Rust</option>
+                            <option value="go">Go</option>
+                        </select>
+                        <button class="btn-control" id="generate-code">
+                            <i class="fas fa-play"></i>
+                            Generate
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="code-content">
+                    <div class="code-input-section">
+                        <label for="code-prompt">Describe what you want to build:</label>
+                        <textarea id="code-prompt" 
+                                  placeholder="e.g., Create a REST API endpoint for user authentication with JWT tokens..."
+                                  rows="4"></textarea>
+                    </div>
+                    
+                    <div class="code-output-section">
+                        <div class="output-header">
+                            <span>Generated Code</span>
+                            <div class="output-controls">
+                                <button class="btn-control" id="copy-code">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button class="btn-control" id="save-code">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <pre id="code-output"><code class="language-python">
+# Generated code will appear here
+print("Hello from iLLuMinator-4.7B!")
+                        </code></pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <div class="status-item">
+                    <i class="fas fa-circle status-online"></i>
+                    <span>iLLuMinator-4.7B Ready</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-clock"></i>
+                    <span id="session-time">00:00:00</span>
+                </div>
+            </div>
+            
+            <div class="status-right">
+                <div class="status-item">
+                    <i class="fas fa-database"></i>
+                    <span id="session-id">Session: ...</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-memory"></i>
+                    <span id="memory-usage">Memory: OK</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Processing with iLLuMinator-4.7B...</div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="/static/terminal.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

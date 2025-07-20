@@ -74,7 +74,7 @@ class MongoDB:
             }
         }
         
-        if self.sessions_collection:
+        if self.sessions_collection is not None:
             try:
                 await self.sessions_collection.insert_one(session_data)
             except Exception as e:
@@ -88,7 +88,7 @@ class MongoDB:
     
     async def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
         """Get session by ID"""
-        if self.sessions_collection:
+        if self.sessions_collection is not None:
             try:
                 session = await self.sessions_collection.find_one({"session_id": session_id})
                 if session:
@@ -103,7 +103,7 @@ class MongoDB:
     
     async def add_to_session(self, session_id: str, data: Dict[str, Any]) -> bool:
         """Add data to session history"""
-        if self.sessions_collection:
+        if self.sessions_collection is not None:
             try:
                 result = await self.sessions_collection.update_one(
                     {"session_id": session_id},

@@ -23,7 +23,6 @@ class iLLuMinatorAPI:
     
     def __init__(self, api_key: Optional[str] = None):
         """Initialize the iLLuMinator API client."""
-        # Hidden API key - in production this would be from environment variables
         self._api_key = api_key or self._get_hidden_api_key()
         self.base_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest"
         self.headers = {
