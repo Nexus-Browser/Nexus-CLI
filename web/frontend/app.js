@@ -29,7 +29,9 @@ class NexusCLIApp {
         try {
             const response = await fetch('/api/session/create', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             
             if (response.ok) {
@@ -191,7 +193,7 @@ class NexusCLIApp {
         });
 
         // New tab button
-        document.getElementById('new-tab-btn').addEventListener('click', () => {
+        document.querySelector('.new-tab-btn').addEventListener('click', () => {
             this.createNewTab();
         });
 
@@ -315,7 +317,9 @@ class NexusCLIApp {
         try {
             const response = await fetch('/api/command', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     command: command,
                     session_id: this.sessionId
@@ -350,7 +354,9 @@ class NexusCLIApp {
         try {
             const response = await fetch('/api/command', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     command: command,
                     session_id: this.sessionId
@@ -425,7 +431,9 @@ class NexusCLIApp {
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     message: message,
                     session_id: this.sessionId
@@ -492,7 +500,9 @@ class NexusCLIApp {
         try {
             const response = await fetch('/api/code/generate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     prompt: prompt,
                     language: language,

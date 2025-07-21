@@ -14,6 +14,8 @@ from pathlib import Path
 
 # Import the lightweight iLLuMinator API client
 from .illuminator_api import iLLuMinatorAPI
+# Import iLLuMinator configuration
+from illuminator_config import get_illuminator_config, get_model_manager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

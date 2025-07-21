@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 try:
-    from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+    from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
     from fastapi.staticfiles import StaticFiles
@@ -109,6 +109,12 @@ class SessionResponse(BaseModel):
     session_id: str
     timestamp: datetime
     status: str
+
+class UserInfo(BaseModel):
+    id: str
+    email: str
+    name: str
+    picture: Optional[str] = None
 
 # WebSocket connection manager
 class ConnectionManager:

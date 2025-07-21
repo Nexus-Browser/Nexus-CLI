@@ -30,6 +30,7 @@ from datetime import datetime
 # Import our modules
 from model.nexus_model import NexusModel
 from tools import FileTools, CodeTools, ProjectTools, MemoryTools
+from quantum_security import QuantumBlockchainSecurity, SecureMemoryManager
 
 # Rich for beautiful CLI output
 BLUE = "\033[94m"
@@ -60,11 +61,26 @@ class IntelligentNexusCLI:
         self.conversation_history = []
         self.command_history = []
         self.context = {}
+        self.read_files_context = {}  # Store files read by user for AI context
         
         # Initialize tools
         self.file_tools = FileTools()
         self.code_tools = CodeTools()
         self.project_tools = ProjectTools()
+        
+        # Initialize quantum blockchain security system
+        try:
+            import getpass
+            user_id = getpass.getuser() or "nexus_user"
+            self.quantum_security = QuantumBlockchainSecurity(user_id)
+            self.secure_memory = SecureMemoryManager(self.quantum_security)
+            self.security_enabled = True
+            self.console.print("[dim]🔐 Quantum blockchain security initialized[/dim]")
+        except Exception as e:
+            self.console.print(f"[yellow]⚠️ Security system initialization warning: {e}[/yellow]")
+            self.quantum_security = None
+            self.secure_memory = None
+            self.security_enabled = False
         
         # Load model
         self._load_model()
@@ -184,10 +200,14 @@ class IntelligentNexusCLI:
   • [code]code <language> <instruction>[/code] - Generate code in specific language
   
 [cyan]File Operations:[/cyan]
-  • [code]read <file>[/code] - Read and syntax-highlight file contents
+  • [code]read <file>[/code] - Read file contents and add to AI context
   • [code]write <file> <content>[/code] - Write content to file
   • [code]list [directory][/code] - List files with intelligent formatting
   • [code]tree [directory][/code] - Show project structure tree
+  
+[cyan]Context Management:[/cyan]
+  • [code]context[/code] - Show files currently in AI context
+  • [code]clearcontext[/code] - Clear all files from AI context
   
 [cyan]Code Analysis:[/cyan]
   • [code]analyze <file>[/code] - Intelligent code analysis with iLLuMinator-4.7B
@@ -220,7 +240,8 @@ class IntelligentNexusCLI:
         commands = [
             "code", "read", "write", "list", "tree", "analyze", 
             "functions", "classes", "run", "test", "install", 
-            "chat", "history", "clear", "help", "exit", "train"
+            "chat", "history", "clear", "context", "clearcontext",
+            "help", "exit", "train"
         ]
         
         suggestions = []
@@ -277,6 +298,8 @@ class IntelligentNexusCLI:
                 "chat": self._handle_chat_mode,
                 "history": self._handle_show_history,
                 "clear": self._handle_clear_history,
+                "context": self._handle_show_context,
+                "clearcontext": self._handle_clear_context,
                 "help": lambda args: (self.show_help(), "")[1],
                 "exit": lambda args: "exit",
                 "status": self._handle_model_status
@@ -399,6 +422,14 @@ class IntelligentNexusCLI:
             if content.startswith("Error reading file"):
                 return f"[red]{content}[/red]"
             
+            # Add to read files context for AI reference
+            self.read_files_context[file_path] = {
+                'content': content,
+                'size': len(content),
+                'lines': len(content.splitlines()),
+                'read_at': datetime.now().isoformat()
+            }
+            
             # Determine language for syntax highlighting
             ext = Path(file_path).suffix.lower()
             language_map = {
@@ -418,7 +449,11 @@ class IntelligentNexusCLI:
             
             self.console.print(Panel(highlighted_content, title=f"[bold]{file_path}[/bold]", subtitle=file_info, border_style="blue"))
             
-            return f"[green]File {file_path} read successfully.[/green]"
+            # Show context confirmation
+            context_files_count = len(self.read_files_context)
+            self.console.print(f"[green]✓ Added {file_path} to context ({context_files_count} files in context)[/green]")
+            
+            return f"[green]File {file_path} read successfully and added to context.[/green]"
             
         except Exception as e:
             return f"[red]Error reading file: {str(e)}[/red]"
@@ -855,6 +890,35 @@ class IntelligentNexusCLI:
         self.command_history.clear()
         return "[green]History cleared.[/green]"
     
+    def _handle_show_context(self, args: List[str]) -> str:
+        """Handle showing current context files."""
+        if not self.read_files_context:
+            return "[yellow]No files in context. Use 'read <filename>' to add files to context.[/yellow]"
+        
+        # Create context table
+        table = Table(title="Files in Context")
+        table.add_column("File", style="cyan")
+        table.add_column("Lines", style="green")
+        table.add_column("Size", style="yellow")
+        table.add_column("Read At", style="dim")
+        
+        for file_path, file_info in self.read_files_context.items():
+            table.add_row(
+                file_path,
+                str(file_info['lines']),
+                self._format_file_size(file_info['size']),
+                file_info['read_at'][:19]  # Show date/time without microseconds
+            )
+        
+        self.console.print(table)
+        return f"[green]{len(self.read_files_context)} files in context[/green]"
+    
+    def _handle_clear_context(self, args: List[str]) -> str:
+        """Handle clearing read files context."""
+        files_count = len(self.read_files_context)
+        self.read_files_context.clear()
+        return f"[green]Context cleared ({files_count} files removed from context).[/green]"
+    
     def _handle_model_status(self, args: List[str]) -> str:
         """Handle model status check."""
         if not self.model:
@@ -893,8 +957,11 @@ class IntelligentNexusCLI:
             return "[red]iLLuMinator model not available. Please check your connection.[/red]"
         
         try:
-            # Generate response first
-            response = self.model.generate_response(user_input, max_length=256, temperature=0.7)
+            # Prepare context-enhanced prompt
+            context_prompt = self._prepare_context_enhanced_prompt(user_input)
+            
+            # Generate response with context
+            response = self.model.generate_response(context_prompt, max_length=256, temperature=0.7)
             
             # Clean up the response to prevent repetitive text
             response = self._clean_response(response)
@@ -914,6 +981,30 @@ class IntelligentNexusCLI:
             
         except Exception as e:
             return f"[red]Error generating response: {str(e)}[/red]"
+    
+    def _prepare_context_enhanced_prompt(self, user_input: str) -> str:
+        """Prepare a context-enhanced prompt with read files information."""
+        # Start with the original prompt
+        enhanced_prompt = user_input
+        
+        # Add file context if any files have been read
+        if self.read_files_context:
+            context_info = "\n\nCONTEXT: The user has previously read the following files that may be relevant:\n"
+            
+            # Add information about each read file
+            for file_path, file_info in self.read_files_context.items():
+                context_info += f"\n--- {file_path} ---\n"
+                # Include first part of content for smaller files, or summary for large files
+                content = file_info['content']
+                if len(content) <= 2000:  # For smaller files, include full content
+                    context_info += f"{content}\n"
+                else:  # For larger files, include first 1000 chars with truncation notice
+                    context_info += f"{content[:1000]}...\n[FILE TRUNCATED - {file_info['lines']} total lines, {file_info['size']} bytes]\n"
+            
+            context_info += "\nPlease reference these files when answering the user's question if relevant.\n"
+            enhanced_prompt = context_info + "\nUSER QUESTION: " + user_input
+        
+        return enhanced_prompt
     
     def _clean_response(self, response: str) -> str:
         """Clean up model response to prevent repetitive or nonsensical output."""
