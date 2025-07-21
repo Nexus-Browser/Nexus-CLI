@@ -2,13 +2,18 @@ rich>=10.0.0
 pathlib
 typing-extensions
 requests>=2.25.0
+
+# iLLuMinator-4.7B Core Dependencies
+torch>=2.0.0
+numpy>=1.21.0
+
+# Optional AI Libraries (for future enhancements)
 transformers>=4.36.0
 accelerate>=0.24.0
 sentencepiece
 scipy
 tqdm
 bitsandbytes
-# torch (install with CUDA manually)
 
 # Web Interface Dependencies
 fastapi>=0.104.0
