@@ -202,6 +202,132 @@ class ExternalKnowledgeAPIs:
         except Exception:
             pass
         return None
+    
+    def search_web_general(self, query: str) -> Optional[str]:
+        """Search the web for general information using multiple sources."""
+        try:
+            # Try DuckDuckGo Instant Answer API (free, no key required)
+            results = []
+            
+            # 1. DuckDuckGo Instant Answer
+            duckduckgo_result = self._search_duckduckgo(query)
+            if duckduckgo_result:
+                results.append(duckduckgo_result)
+            
+            # 2. Search for recent tutorials/guides
+            tutorial_result = self._search_tutorials(query)
+            if tutorial_result:
+                results.append(tutorial_result)
+            
+            # 3. Search for official documentation links
+            docs_result = self._search_documentation_links(query)
+            if docs_result:
+                results.append(docs_result)
+            
+            if results:
+                return "\n\n".join(results)
+                
+        except Exception as e:
+            logger.debug(f"Web search failed: {e}")
+        return None
+    
+    def _search_duckduckgo(self, query: str) -> Optional[str]:
+        """Search DuckDuckGo Instant Answer API (free, no API key needed)."""
+        try:
+            response = self.session.get(
+                f"https://api.duckduckgo.com/?q={quote(query)}&format=json&no_html=1&skip_disambig=1",
+                timeout=3
+            )
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Get abstract or definition
+                if data.get('Abstract'):
+                    return f"**Web Search Result:**\n{data['Abstract']}\n\nSource: {data.get('AbstractURL', '')}"
+                
+                # Get instant answer
+                if data.get('Answer'):
+                    return f"**Quick Answer:**\n{data['Answer']}"
+                
+                # Get related topics
+                if data.get('RelatedTopics'):
+                    topics = data['RelatedTopics'][:2]  # Top 2 related topics
+                    if topics:
+                        topic_text = []
+                        for topic in topics:
+                            if isinstance(topic, dict) and topic.get('Text'):
+                                topic_text.append(topic['Text'][:200])
+                        if topic_text:
+                            return f"**Related Information:**\n" + "\n\n".join(topic_text)
+        except Exception:
+            pass
+        return None
+    
+    def _search_tutorials(self, query: str) -> Optional[str]:
+        """Search for recent tutorials and guides."""
+        try:
+            # Search for tutorial content on common sites
+            tutorial_query = f"{query} tutorial guide how-to"
+            
+            # Use a simple web search approach
+            response = self.session.get(
+                f"https://api.duckduckgo.com/?q={quote(tutorial_query)}&format=json&no_html=1",
+                timeout=3
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('Results'):
+                    result = data['Results'][0]
+                    return f"**Tutorial Found:**\n{result.get('Text', '')}\n\nLink: {result.get('FirstURL', '')}"
+        except Exception:
+            pass
+        return None
+    
+    def _search_documentation_links(self, query: str) -> Optional[str]:
+        """Search for official documentation links."""
+        try:
+            # Common documentation sites
+            doc_sites = [
+                "site:docs.python.org",
+                "site:developer.mozilla.org",
+                "site:reactjs.org",
+                "site:nodejs.org/docs",
+                "site:doc.rust-lang.org"
+            ]
+            
+            # Try to find official docs
+            for site in doc_sites:
+                if any(term in query.lower() for term in ['python', 'javascript', 'react', 'node', 'rust']):
+                    search_query = f"{query} {site}"
+                    # This would typically use a real search API
+                    # For now, return a helpful message about where to find docs
+                    if 'python' in query.lower() and 'site:docs.python.org' in site:
+                        return f"**Official Documentation:**\nPython docs: https://docs.python.org/3/\nSearch for: {query}"
+        except Exception:
+            pass
+        return None
+    
+    def scrape_webpage_content(self, url: str) -> Optional[str]:
+        """Scrape content from a webpage for additional context."""
+        try:
+            response = self.session.get(url, timeout=5)
+            if response.status_code == 200:
+                # Try to extract useful text content
+                content = response.text
+                
+                # Simple text extraction (could be enhanced with BeautifulSoup)
+                # Remove HTML tags with basic regex
+                import re
+                text = re.sub(r'<[^>]+>', '', content)
+                
+                # Clean up whitespace
+                text = ' '.join(text.split())
+                
+                # Return first 1000 characters
+                return text[:1000] + "..." if len(text) > 1000 else text
+        except Exception as e:
+            logger.debug(f"Web scraping failed for {url}: {e}")
+        return None
 
 
 class iLLuMinatorAPI:
@@ -807,12 +933,24 @@ class iLLuMinatorAPI:
                 if wiki_info:
                     response_parts.append(wiki_info)
             
+            # 6. **NEW: General web search for comprehensive information**
+            if any(word in prompt_lower for word in ['latest', 'recent', 'new', 'update', 'current', 'best practices', 'trends']):
+                web_info = self.external_apis.search_web_general(prompt)
+                if web_info:
+                    response_parts.append(web_info)
+            
+            # 7. **NEW: Search for tutorials and guides**
+            if any(word in prompt_lower for word in ['learn', 'tutorial', 'guide', 'how to start', 'getting started']):
+                tutorial_info = self.external_apis._search_tutorials(prompt)
+                if tutorial_info:
+                    response_parts.append(tutorial_info)
+            
             # Combine all information sources
             if response_parts:
                 combined_response = "\n\n".join(response_parts)
                 
                 # Add a brief intro explaining the comprehensive nature
-                intro = f"**Comprehensive Answer for: {prompt}**\n\n"
+                intro = f"**Comprehensive Web-Enhanced Answer for: {prompt}**\n\n"
                 final_response = intro + combined_response
                 
                 # Cache the response
