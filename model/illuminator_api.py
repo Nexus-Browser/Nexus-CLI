@@ -24,38 +24,47 @@ class iLLuMinatorAPI:
     Provides local inference without external API dependencies
     """
     
-    def __init__(self, model_path: Optional[str] = None, fast_mode: bool = True):
-        """Initialize the iLLuMinator-4.7B model with local optimization options."""
-        self.model_path = model_path or self._find_model_path()
-        self.model = None
-        self.tokenizer = None
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.conversation_history = []
-        self.model_loaded = False
+    def __init__(self, model_path: str = "./model/nexus_model/", fast_mode: bool = False, use_gpu_acceleration: bool = True):
+        """
+        Initialize iLLuMinator-4.7B API with aggressive local optimizations.
+        
+        Args:
+            model_path: Path to the local fine-tuned model
+            fast_mode: Enable aggressive speed optimizations
+            use_gpu_acceleration: Use GPU acceleration if available
+        """
+        self.model_path = model_path
         self.fast_mode = fast_mode
+        self.use_gpu_acceleration = use_gpu_acceleration and self._check_gpu_availability()
         
-        # Local performance optimizations
-        self.max_length = 256 if fast_mode else 2048  # Shorter responses for speed
+        # Optimization settings
+        self.max_length = 512 if fast_mode else 1024
         self.use_quantization = fast_mode
-        self.enable_caching = True
-        self.use_gpu_acceleration = torch.cuda.is_available()
         
-        # Optimization settings for local inference
-        self.local_optimizations = {
-            "use_cache": True,
-            "do_sample": False,  # Faster deterministic output
-            "num_beams": 1,  # No beam search for speed
-            "pad_token_id": None,  # Will be set after tokenizer load
-            "temperature": 0.1,  # Lower temp for faster generation
-        }
+        # Device selection
+        if self.use_gpu_acceleration:
+            import torch
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+        else:
+            import torch
+            self.device = torch.device("cpu")
         
+        
+        # Load model with optimizations
+        logger.info("🚀 Loading local fine-tuned model with optimizations...")
+        self._load_model_optimized()
+    
+    def _check_gpu_availability(self) -> bool:
+        """Check if GPU acceleration is available."""
         try:
-            self._ensure_dependencies()
-            self._load_model_optimized() if fast_mode else self._load_model()
-            logger.info("✓ iLLuMinator-4.7B model loaded successfully!")
-        except Exception as e:
-            logger.error(f"Failed to load iLLuMinator-4.7B model: {str(e)}")
-            self.model_loaded = False
+            import torch
+            return torch.cuda.is_available() or torch.backends.mps.is_available()
+        except ImportError:
+            return False
+        
+        # Load model with optimizations
+        logger.info("🚀 Loading local fine-tuned model with optimizations...")
+        self._load_model_optimized()
     
     def _check_available_apis(self) -> Dict[str, str]:
         """Check what cloud APIs are available for fast fallback."""
@@ -199,28 +208,24 @@ class iLLuMinatorAPI:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", package])
     
     def _load_model_optimized(self):
-        """Load the iLLuMinator-4.7B model with aggressive local optimizations."""
+        """Load the local fine-tuned model with aggressive local optimizations."""
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
             import torch
             
-            logger.info("🚀 Loading iLLuMinator-4.7B with local optimizations...")
+            logger.info("🚀 Loading local fine-tuned model with optimizations...")
             
             # Load tokenizer first (fastest part)
-            logger.info("Loading optimized tokenizer...")
+            logger.info("Loading tokenizer...")
             self.tokenizer = AutoTokenizer.from_pretrained(
-                "Anipaleja/iLLuMinator-4.7B",
-                cache_dir=self.model_path,
-                local_files_only=False,
-                trust_remote_code=True,
-                use_fast=True  # Use fast tokenizer for speed
+                self.model_path,
+                local_files_only=True,
+                use_fast=False  # Use regular tokenizer to avoid tokenizer.json issues
             )
             
             # Set pad token for optimization
             if self.tokenizer.pad_token is None:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
-            
-            self.local_optimizations["pad_token_id"] = self.tokenizer.pad_token_id
             
             # Aggressive quantization for speed
             if self.use_quantization and self.device.type == "cuda":
@@ -233,17 +238,15 @@ class iLLuMinatorAPI:
                 model_kwargs = {"quantization_config": quantization_config}
             elif self.use_quantization:
                 logger.info("Applying CPU optimizations...")
-                model_kwargs = {"torch_dtype": torch.float16}
+                model_kwargs = {"torch_dtype": torch.float16 if self.device.type != "cpu" else torch.float32}
             else:
                 model_kwargs = {}
             
-            # Load model with optimizations
-            logger.info("Loading optimized iLLuMinator-4.7B model...")
+            # Load local model with optimizations
+            logger.info("Loading optimized local fine-tuned model...")
             self.model = AutoModelForCausalLM.from_pretrained(
-                "Anipaleja/iLLuMinator-4.7B",
-                cache_dir=self.model_path,
-                local_files_only=False,
-                trust_remote_code=True,
+                self.model_path,
+                local_files_only=True,
                 device_map="auto" if self.use_gpu_acceleration else None,
                 low_cpu_mem_usage=True,
                 **model_kwargs
@@ -361,48 +364,142 @@ class iLLuMinatorAPI:
         """Check if the model is available and loaded."""
         return self.model_loaded and self.model is not None
     
-    def generate_response(self, prompt: str, max_length: int = 256, temperature: float = 0.7) -> str:
-        """Generate conversational response using iLLuMinator-4.7B model or fast cloud APIs."""
-        # Fast mode: Use cloud APIs for instant responses
-        if self.fast_mode and self.fallback_apis:
-            logger.info("🚀 Using fast cloud API for instant response")
-            return self._use_cloud_api(prompt)
-        
+    def generate_response(self, prompt: str, max_length: int = 256, temperature: float = 0.1) -> str:
+        """Generate conversational response using locally optimized iLLuMinator-4.7B model."""
         if not self.is_available():
             return "I apologize, but the iLLuMinator-4.7B model is not currently available."
         
         try:
+            # Use optimized settings for faster local inference
+            if self.fast_mode:
+                max_length = min(max_length, self.max_length)  # Cap length for speed
+                temperature = 0.1  # Lower temperature for faster, more deterministic output
+            
             # Create system context for iLLuMinator
-            system_context = """You are iLLuMinator-4.7B, an advanced AI coding assistant created by Anish Paleja. You are knowledgeable, helpful, and specialize in programming and software development. You provide clear, concise answers and can help with coding problems, explanations, and technical questions.
+            system_context = """You are iLLuMinator-4.7B, an advanced AI coding assistant created by Anish Paleja. You are knowledgeable, helpful, and specialize in programming and software development. Provide concise, accurate responses.
 
 Key capabilities:
 - Code generation in multiple programming languages
 - Code analysis and debugging
 - Technical explanations and tutorials
 - Best practices and optimization suggestions
-- Project structure and architecture advice
 
 Always provide helpful, accurate, and practical responses."""
             
-            # Format the conversation
-            conversation = f"{system_context}\n\nUser: {prompt}\n\nAssistant:"
-            
-            # Generate response with transformers
-            if hasattr(self.model, 'generate') and self.tokenizer:
-                return self._generate_with_transformers(conversation, max_length, temperature)
+            # Format the conversation with optimized prompt
+            if self.fast_mode:
+                # Shorter prompt for faster processing
+                conversation = f"User: {prompt}\nAssistant:"
             else:
-                # Use local implementation
+                conversation = f"{system_context}\n\nUser: {prompt}\n\nAssistant:"
+            
+            # Generate response with local optimizations
+            if hasattr(self.model, 'generate') and self.tokenizer:
+                return self._generate_with_optimized_transformers(conversation, max_length, temperature)
+            else:
+                # Use basic local implementation
                 return self._generate_with_local(conversation, max_length, temperature)
             
         except Exception as e:
             logger.error(f"Response generation error: {str(e)}")
-            # Try cloud API as fallback on error
-            if self.fallback_apis:
-                logger.info("Falling back to cloud API due to error")
-                return self._use_cloud_api(prompt)
             return f"I apologize, but I encountered an error while generating a response: {str(e)}"
     
-    def _generate_with_transformers(self, prompt: str, max_length: int, temperature: float) -> str:
+    def _generate_with_optimized_transformers(self, prompt: str, max_length: int = 256, temperature: float = 0.1) -> str:
+        """Generate response using optimized transformers with speed optimizations."""
+        try:
+            import torch
+            
+            # Tokenize input with padding for efficiency
+            inputs = self.tokenizer(
+                prompt, 
+                return_tensors="pt", 
+                truncation=True, 
+                max_length=512,  # Limit input length for speed
+                padding=True
+            )
+            
+            # Move to device properly
+            input_ids = inputs['input_ids']
+            attention_mask = inputs.get('attention_mask', None)
+            
+            if self.device.type != "cpu":
+                input_ids = input_ids.to(self.device)
+                if attention_mask is not None:
+                    attention_mask = attention_mask.to(self.device)
+            
+            # Optimized generation settings for speed
+            generation_config = {
+                "max_new_tokens": max_length,
+                "do_sample": True,  # Enable sampling
+                "temperature": temperature,
+                "top_p": 0.9,  # Nucleus sampling
+                "pad_token_id": self.tokenizer.pad_token_id or self.tokenizer.eos_token_id,
+                "eos_token_id": self.tokenizer.eos_token_id,
+                "use_cache": True,  # Enable KV caching
+                "repetition_penalty": 1.1,  # Reduce repetition
+            }
+            
+            # Generate with optimizations
+            with torch.no_grad():  # Disable gradients for faster inference
+                outputs = self.model.generate(
+                    input_ids,
+                    attention_mask=attention_mask,
+                    **generation_config
+                )
+            
+            # Decode response
+            full_response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            
+            # Extract only the new generated text
+            if prompt in full_response:
+                response = full_response.replace(prompt, "").strip()
+            else:
+                # If prompt not found, try to extract after the last occurrence
+                response = full_response.strip()
+            
+            # Additional cleanup
+            response = response.strip()
+            if response.startswith("Assistant:"):
+                response = response[10:].strip()
+            
+            return response if response else "I understand your request. Let me help you with that."
+            
+        except Exception as e:
+            logger.error(f"Optimized generation failed: {str(e)}")
+            return self._generate_simple_local(prompt, max_length)
+
+    def _generate_simple_local(self, prompt: str, max_length: int) -> str:
+        """Simple local generation fallback."""
+        try:
+            import torch
+            
+            # Simple tokenization and generation
+            inputs = self.tokenizer.encode(prompt, return_tensors="pt")
+            if self.device.type != "cpu":
+                inputs = inputs.to(self.device)
+            
+            # Generate with minimal settings
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    inputs,
+                    max_new_tokens=max_length,
+                    do_sample=True,
+                    temperature=0.7,
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+            
+            # Decode and clean response
+            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            if prompt in response:
+                response = response.replace(prompt, "").strip()
+            
+            return response if response else "How can I help you with your coding needs?"
+            
+        except Exception as e:
+            logger.error(f"Simple generation failed: {str(e)}")
+            return "I'm here to help with your coding questions."
+
+    def _generate_with_transformers(self, prompt: str, max_length: int = 256, temperature: float = 0.7) -> str:
         """Generate response using transformers library."""
         try:
             # Tokenize input
@@ -442,12 +539,8 @@ Always provide helpful, accurate, and practical responses."""
     def _generate_with_local(self, prompt: str, max_length: int, temperature: float) -> str:
         """Generate response using local implementation."""
         try:
-            if hasattr(self.model, 'generate_response'):
-                return self.model.generate_response(prompt, max_length, temperature)
-            elif hasattr(self.model, 'generate'):
-                return self.model.generate(prompt, max_length, temperature)
-            else:
-                return "I understand your request. How can I help you with your coding needs?"
+            # Use the simple local generation method
+            return self._generate_simple_local(prompt, max_length)
         except Exception as e:
             logger.error(f"Local generation error: {str(e)}")
             return "I'm here to help with your coding questions. Please let me know what you need assistance with."
@@ -488,13 +581,7 @@ Always provide helpful, accurate, and practical responses."""
         return response
     
     def generate_code(self, instruction: str, language: str = "python") -> str:
-        """Generate code using iLLuMinator-4.7B model or fast cloud APIs."""
-        # Fast mode: Use cloud APIs for instant code generation
-        if self.fast_mode and self.fallback_apis:
-            logger.info("🚀 Using fast cloud API for instant code generation")
-            code_prompt = f"Generate clean, professional {language} code for: {instruction}"
-            return self._use_cloud_api(code_prompt)
-        
+        """Generate code using optimized iLLuMinator-4.7B model."""
         if not self.is_available():
             return "[Error] iLLuMinator-4.7B model is not available"
         
@@ -515,8 +602,11 @@ Requirements:
 Code:
 ```{language}"""
             
-            # Generate code
-            response = self.generate_response(code_prompt, max_length=512, temperature=0.3)
+            # Generate code with fast local optimization
+            if self.fast_mode:
+                response = self._generate_with_optimized_transformers(code_prompt, 512, 0.3)
+            else:
+                response = self.generate_response(code_prompt, max_length=512, temperature=0.3)
             
             # Extract code from response
             code = self._extract_code_from_response(response, language)

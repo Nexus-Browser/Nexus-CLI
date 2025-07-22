@@ -1057,6 +1057,8 @@ def main():
     parser.add_argument("--model-path", help="Path to custom model")
     parser.add_argument("--config", help="Path to model config file")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument("--fast-mode", action="store_true", help="Enable fast mode for optimized local inference")
+    parser.add_argument("query", nargs="?", help="Query to process in non-interactive mode")
     
     args = parser.parse_args()
     
@@ -1065,7 +1067,23 @@ def main():
     
     try:
         cli = IntelligentNexusCLI()
-        cli.run()
+        
+        # Enable fast mode if requested
+        if args.fast_mode and hasattr(cli.model, 'api') and hasattr(cli.model.api, 'fast_mode'):
+            cli.model.api.fast_mode = True
+            cli.console.print("[green]🚀 Fast mode enabled for optimized local inference![/green]")
+        
+        # If a query is provided, process it directly
+        if args.query:
+            cli.console.print("[bold blue]Nexus CLI - Fast Query Mode[/bold blue]")
+            try:
+                response = cli.model.generate_response(args.query)
+                cli.console.print(Panel(response, title="Response", border_style="blue"))
+            except Exception as e:
+                cli.console.print(f"[red]Error processing query: {str(e)}[/red]")
+        else:
+            cli.run()
+            
     except Exception as e:
         print(f"Fatal error: {e}")
         sys.exit(1)

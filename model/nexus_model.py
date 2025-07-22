@@ -28,46 +28,43 @@ class NexusModel:
     """
     
     def __init__(self, model_path: Optional[str] = None, fast_mode: bool = True):
-        """Initialize the Nexus model with iLLuMinator-4.7B in fast mode."""
-        logger.info("Initializing Nexus model with iLLuMinator-4.7B...")
+        """Initialize the Nexus model with local fine-tuned model in fast mode."""
+        logger.info("Initializing Nexus model with local fine-tuned model...")
         if fast_mode:
-            logger.info("🚀 Fast mode enabled - using cloud APIs for instant responses")
+            logger.info("🚀 Fast mode enabled - using optimized local inference")
         
         try:
-            # Initialize the iLLuMinator-4.7B model with fast mode
-            logger.info("Loading iLLuMinator-4.7B transformer model...")
-            self.llm = iLLuMinatorAPI(model_path, fast_mode=fast_mode)
+            # Initialize the local fine-tuned model with fast mode
+            logger.info("Loading local fine-tuned transformer model...")
+            self.api = iLLuMinatorAPI(model_path or "./model/nexus_model/", fast_mode=fast_mode)
             self.fast_mode = fast_mode
             
-            if self.llm.is_available() or (fast_mode and self.llm.fallback_apis):
+            if self.api.is_available():
                 self.model_available = True
-                if fast_mode and self.llm.fallback_apis:
-                    logger.info("✓ iLLuMinator-4.7B fast mode ready with cloud API fallback!")
-                else:
-                    logger.info("✓ iLLuMinator-4.7B model loaded successfully!")
+                logger.info("✓ Local fine-tuned model loaded successfully!")
             else:
                 self.model_available = False
-                logger.warning("iLLuMinator-4.7B model failed to load, using basic mode")
+                logger.warning("Local fine-tuned model failed to load, using basic mode")
             
             # Initialize code analyzer
             self.code_analyzer = CodeAnalyzer()
             
         except Exception as e:
-            logger.error(f"Error initializing iLLuMinator-4.7B model: {str(e)}")
+            logger.error(f"Error initializing local fine-tuned model: {str(e)}")
             logger.warning("Falling back to basic mode without AI capabilities")
-            self.llm = None
+            self.api = None
             self.model_available = False
             self.code_analyzer = CodeAnalyzer()
             self.fast_mode = False
     
     def generate_code(self, instruction: str, language: str = "python") -> str:
         """Generate code using iLLuMinator-4.7B model."""
-        if not self.model_available or not self.llm:
+        if not self.model_available or not self.api:
             return "[Error] iLLuMinator model not available"
         
         try:
             logger.info(f"Generating {language} code for: {instruction[:50]}...")
-            response = self.llm.generate_code(instruction, language)
+            response = self.api.generate_code(instruction, language)
             logger.info("✓ Code generation completed")
             return response
             
@@ -77,12 +74,12 @@ class NexusModel:
     
     def generate_response(self, prompt: str, max_length: int = 256, temperature: float = 0.7) -> str:
         """Generate conversational response using iLLuMinator-4.7B model."""
-        if not self.model_available or not self.llm:
+        if not self.model_available or not self.api:
             return "I apologize, but the iLLuMinator model is not currently available. Please check your connection."
         
         try:
             logger.info(f"Generating response for: {prompt[:30]}...")
-            response = self.llm.generate_response(prompt, max_length, temperature)
+            response = self.api.generate_response(prompt, max_length, temperature)
             logger.info("✓ Response generation completed")
             return response
             
@@ -92,10 +89,10 @@ class NexusModel:
     
     def analyze_code(self, code: str) -> Dict[str, Any]:
         """Analyze code using iLLuMinator-4.7B model or fallback analyzer."""
-        if self.model_available and self.llm:
+        if self.model_available and self.api:
             try:
                 logger.info("Analyzing code with iLLuMinator...")
-                analysis = self.llm.analyze_code(code)
+                analysis = self.api.analyze_code(code)
                 logger.info("✓ Code analysis completed")
                 return analysis
             except Exception as e:
@@ -106,8 +103,8 @@ class NexusModel:
     
     def get_model_info(self) -> Dict[str, str]:
         """Get information about the current model."""
-        if self.llm:
-            return self.llm.get_model_info()
+        if self.api:
+            return self.api.get_model_info()
         else:
             return {
                 "name": "Nexus (Offline)",
@@ -117,12 +114,12 @@ class NexusModel:
     
     def is_available(self) -> bool:
         """Check if the model is available and working."""
-        return self.model_available and self.llm is not None
+        return self.model_available and self.api is not None
     
     def test_connection(self) -> bool:
         """Test the connection to iLLuMinator API."""
-        if self.llm:
-            return self.llm.is_available()
+        if self.api:
+            return self.api.is_available()
         return False
 
 
