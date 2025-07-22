@@ -5,29 +5,34 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
 
-> **🚀 The most intelligent CLI coding assistant - powered by advanced code generation and analysis, with NO GPT wrappers!**
+> **🚀 The most intelligent CLI coding assistant - powered by the local iLLuMinator-4.7B model!**
 
-Nexus CLI is a revolutionary command-line interface that combines the best practices from successful CLI tools like **Warp**, **Cursor**, **Gemini CLI**, and **Claude Code** to provide an intelligent, context-aware coding experience. Now powered by the advanced **iLLuMinator-4.7B** model, it delivers professional-grade code generation and analysis through a lightweight API without requiring local GPU resources.
+Nexus CLI is a revolutionary command-line interface that combines the best practices from successful CLI tools like **Warp**, **Cursor**, **Gemini CLI**, and **Claude Code** to provide an intelligent, context-aware coding experience. Powered by the **iLLuMinator-4.7B** model from [GitHub](https://github.com/Anipaleja/iLLuMinator-4.7B), it delivers professional-grade code generation and analysis using local AI processing.
 
 ## ✨ Key Features
 
 ### 🧠 **Intelligent Code Generation**
 - **Natural Language Processing**: Generate code from plain English descriptions
 - **Multi-Language Support**: Python, JavaScript, TypeScript, Java, C++, Go, Rust, and 20+ more
-- **Context-Aware Generation**: Smart code patterns based on your project structure
-- **No GPU Required**: Lightweight API-based approach works on any laptop
+- **Context-Aware Generation**: Smart code patterns based on your project structure and file context
+- **Local Processing**: Uses iLLuMinator-4.7B model running locally on your machine
 
 ### 🔍 **Advanced Code Analysis**
-- **AST Parsing**: Deep code structure analysis using Abstract Syntax Trees
-- **Complexity Metrics**: Function extraction, class analysis, and code quality assessment
+- **Deep Code Understanding**: Powered by iLLuMinator-4.7B's advanced transformer architecture
+- **Function & Class Extraction**: Intelligent code structure analysis
 - **Syntax Highlighting**: Beautiful, syntax-highlighted code display
-- **Intelligent Error Detection**: Context-aware error handling and suggestions
+- **Context-Aware Suggestions**: AI understands your project structure
 
-### **Smart File Operations**
+### 📁 **Smart File Operations with Context**
+- **Context-Aware File Reading**: Files are automatically added to AI context when read
 - **Intelligent Path Resolution**: Automatically find files in common directories
-- **Encoding Detection**: Handle multiple file encodings seamlessly
 - **Project Tree Visualization**: Beautiful tree structures with Rich terminal output
 - **File Type Recognition**: Automatic language detection and syntax highlighting
+
+### 🧠 **Context Management**
+- **Persistent Context**: Files remain in AI memory across conversations
+- **Context Commands**: View and manage files in AI context
+- **Smart Referencing**: AI automatically references relevant files when answering questions
 
 ### 🛠️ **Project Management**
 - **Project Detection**: Automatically identify project types (Python, Node.js, Rust, Go, etc.)
@@ -43,21 +48,22 @@ Nexus CLI is a revolutionary command-line interface that combines the best pract
 - **Error Handling**: Graceful error recovery with helpful suggestions
 
 ### 🚀 **Performance & Reliability**
-- **No External Dependencies**: Works completely offline without API calls
+- **Local AI Model**: No external API dependencies once set up
 - **Fast Execution**: Optimized for speed with intelligent caching
 - **Cross-Platform**: Works on macOS, Linux, and Windows
 - **Production Ready**: Robust error handling and edge case management
-- **Always Updated**: Model improvements deployed automatically via API
+- **Offline Capable**: Works completely offline after initial setup
 
 ## 🎯 **What Makes Nexus CLI Special**
 
-Unlike other CLI tools that rely on external AI services or GPT wrappers, Nexus CLI uses:
+Unlike other CLI tools that rely on external AI services, Nexus CLI uses:
 
-- **🔧 Open-source frameworks** and techniques from successful CLI tools
-- **🧠 Intelligent pattern matching** and semantic analysis
-- **📊 AST-based code understanding** for accurate generation
-- **🎨 Modern CLI patterns** from Warp, Cursor, and other successful tools
-- **⚡ Zero-latency responses** with no API calls or network dependencies
+- **🤖 Local iLLuMinator-4.7B Model**: Advanced transformer model running on your hardware
+- **🔧 No API Keys Required**: No external dependencies or rate limits
+- **🧠 Context Awareness**: Files automatically added to AI context for better responses
+- **📊 Deep Code Understanding**: Transformer-based code analysis and generation
+- **🎨 Modern CLI Patterns**: Best practices from successful CLI tools
+- **⚡ Privacy-First**: All processing happens locally on your machine
 
 ## 🚀 Quick Start
 
@@ -67,6 +73,9 @@ Unlike other CLI tools that rely on external AI services or GPT wrappers, Nexus 
 # Clone the repository
 git clone https://github.com/yourusername/Nexus-CLI.git
 cd Nexus-CLI
+
+# Install dependencies and set up iLLuMinator-4.7B model
+python setup_illuminator.py
 
 # Create virtual environment
 python -m venv venv
@@ -79,6 +88,8 @@ pip install -r requirements.txt
 python nexus_cli.py
 ```
 
+**Note**: The setup script will automatically download and configure the iLLuMinator-4.7B model from GitHub. This may take several minutes depending on your internet connection.
+
 ### Basic Usage
 
 ```bash
@@ -87,11 +98,20 @@ nexus> code function to add two numbers
 nexus> code class calculator with basic operations
 nexus> code web server with flask
 
-# Analyze existing code
+# Read files and add to AI context
 nexus> read myfile.py
+nexus> context                    # View files in context
+nexus> clearcontext              # Clear context
+
+# Analyze existing code with context awareness
 nexus> analyze myfile.py
 nexus> functions myfile.py
 nexus> classes myfile.py
+
+# Ask questions about your code (AI will reference context files)
+nexus> What does this project do?
+nexus> How can I improve the main function?
+nexus> Explain the class structure
 
 # Project operations
 nexus> list
@@ -116,15 +136,21 @@ code <language> <instruction>         # Generate code in specific language
 
 ### File Operations
 ```bash
-read <file>                          # Read and syntax-highlight file
+read <file>                          # Read file and add to AI context
 write <file> <content>               # Write content to file
 list [directory]                     # List files with intelligent formatting
 tree [directory]                     # Show project structure tree
 ```
 
+### Context Management
+```bash
+context                              # Show files currently in AI context
+clearcontext                         # Clear all files from AI context
+```
+
 ### Code Analysis
 ```bash
-analyze <file>                       # Intelligent code analysis with AST
+analyze <file>                       # Intelligent code analysis with iLLuMinator-4.7B
 functions <file>                     # Extract and analyze functions
 classes <file>                       # Extract and analyze classes
 ```

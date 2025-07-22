@@ -30,7 +30,6 @@ from datetime import datetime
 # Import our modules
 from model.nexus_model import NexusModel
 from tools import FileTools, CodeTools, ProjectTools, MemoryTools
-from quantum_security import QuantumBlockchainSecurity, SecureMemoryManager
 
 # Rich for beautiful CLI output
 BLUE = "\033[94m"
@@ -68,20 +67,6 @@ class IntelligentNexusCLI:
         self.code_tools = CodeTools()
         self.project_tools = ProjectTools()
         
-        # Initialize quantum blockchain security system
-        try:
-            import getpass
-            user_id = getpass.getuser() or "nexus_user"
-            self.quantum_security = QuantumBlockchainSecurity(user_id)
-            self.secure_memory = SecureMemoryManager(self.quantum_security)
-            self.security_enabled = True
-            self.console.print("[dim]🔐 Quantum blockchain security initialized[/dim]")
-        except Exception as e:
-            self.console.print(f"[yellow]⚠️ Security system initialization warning: {e}[/yellow]")
-            self.quantum_security = None
-            self.secure_memory = None
-            self.security_enabled = False
-        
         # Load model
         self._load_model()
         
@@ -92,24 +77,24 @@ class IntelligentNexusCLI:
         self._load_context()
     
     def _load_model(self):
-        """Load the iLLuMinator AI model with progress indication."""
+        """Load the iLLuMinator-4.7B model with progress indication."""
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=self.console
         ) as progress:
-            task = progress.add_task("Connecting to iLLuMinator-4.7B API...", total=None)
+            task = progress.add_task("Loading iLLuMinator-4.7B model...", total=None)
             try:
                 self.model = NexusModel()
                 if self.model.is_available():
-                    progress.update(task, description="✓ iLLuMinator API connected successfully!")
+                    progress.update(task, description="✓ iLLuMinator-4.7B model loaded successfully!")
                     self.model_available = True
                 else:
-                    progress.update(task, description="WARNING: API connection failed, using basic mode")
+                    progress.update(task, description="WARNING: iLLuMinator-4.7B failed to load, using basic mode")
                     self.model_available = False
                 time.sleep(0.5)
             except Exception as e:
-                self.console.print(f"[red]Error connecting to iLLuMinator API: {e}[/red]")
+                self.console.print(f"[red]Error loading iLLuMinator-4.7B model: {e}[/red]")
                 self.console.print("[yellow]Falling back to basic mode...[/yellow]")
                 self.model = None
                 self.model_available = False
@@ -167,7 +152,7 @@ class IntelligentNexusCLI:
         layout.split_column(
             Layout(Panel.fit(
                 "[bold blue]Nexus CLI - Intelligent AI Coding Assistant[/bold blue]\n"
-                "[dim]Powered by iLLuMinator-4.7B - Advanced code generation without GPU requirements[/dim]",
+                "[dim]Powered by iLLuMinator-4.7B - Local AI model from GitHub[/dim]",
                 border_style="blue"
             ), name="header"),
             Layout(name="body")
@@ -229,7 +214,8 @@ class IntelligentNexusCLI:
   • [code]exit[/code] - Exit Nexus CLI
   • [code]status[/code] - Check iLLuMinator API status
 
-[dim]Powered by iLLuMinator-4.7B - Advanced AI without GPU requirements![/dim]
+[dim]Powered by iLLuMinator-4.7B - Local AI model from GitHub repository![/dim]
+[dim]Repository: https://github.com/Anipaleja/iLLuMinator-4.7B[/dim]
 [dim]Tip: I understand natural language! Try "create a function to add numbers" or "build a web server"[/dim]
 [dim]Smart Features: Context awareness, command suggestions, intelligent error handling[/dim]
 """
@@ -326,7 +312,7 @@ class IntelligentNexusCLI:
     def _handle_code_generation(self, args: List[str]) -> str:
         """Handle intelligent code generation requests."""
         if not self.model_available:
-            return "[red]iLLuMinator-4.7B API not available. Only basic commands are supported.[/red]"
+            return "[red]iLLuMinator-4.7B model not available. Only basic commands are supported.[/red]"
         if not args:
             return "[red]Please provide an instruction for code generation.[/red]"
         
@@ -845,7 +831,7 @@ class IntelligentNexusCLI:
     def _handle_chat_mode(self, args: List[str]) -> str:
         """Handle intelligent chat mode."""
         if not self.model_available:
-            return "[red]iLLuMinator-4.7B API not available. Only basic commands are supported.[/red]"
+            return "[red]iLLuMinator-4.7B model not available. Only basic commands are supported.[/red]"
         
         self.console.print("[bold green]Entering chat mode with iLLuMinator-4.7B. Type 'exit' to return to command mode.[/bold green]")
 
@@ -927,34 +913,34 @@ class IntelligentNexusCLI:
         model_info = self.model.get_model_info()
         
         # Create status table
-        table = Table(title="iLLuMinator-4.7B Status")
+        table = Table(title="iLLuMinator-4.7B Model Status")
         table.add_column("Property", style="cyan")
         table.add_column("Value", style="green")
         
         for key, value in model_info.items():
             table.add_row(key.replace("_", " ").title(), str(value))
         
-        # Test API connection
+        # Test model availability
         is_working = self.model.test_connection()
         status_color = "green" if is_working else "red"
-        status_text = "✓ Connected" if is_working else "✗ Disconnected"
+        status_text = "✓ Available" if is_working else "✗ Not Available"
         
-        table.add_row("Connection Test", f"[{status_color}]{status_text}[/{status_color}]")
+        table.add_row("Model Test", f"[{status_color}]{status_text}[/{status_color}]")
         
         self.console.print(table)
         
         return f"[green]Model status: {'Available' if is_working else 'Unavailable'}[/green]"
     
     def _handle_train_model(self, args: List[str]) -> str:
-        """Handle model training - no longer needed for API model."""
-        return "[yellow]Training is not required for the iLLuMinator-4.7B API model. The model is already trained and deployed![/yellow]"
+        """Handle model training - show info about iLLuMinator-4.7B."""
+        return "[yellow]iLLuMinator-4.7B is a pre-trained model from https://github.com/Anipaleja/iLLuMinator-4.7B. No additional training required![/yellow]"
     
     def _handle_natural_language(self, user_input: str) -> str:
-        """Handle natural language input using the iLLuMinator-4.7B API."""
+        """Handle natural language input using the iLLuMinator-4.7B model."""
         if not self.model_available:
-            return "[red]iLLuMinator-4.7B API not available. Only basic commands are supported.[/red]"
+            return "[red]iLLuMinator-4.7B model not available. Only basic commands are supported.[/red]"
         if not self.model:
-            return "[red]iLLuMinator model not available. Please check your connection.[/red]"
+            return "[red]iLLuMinator model not available. Please check the model installation.[/red]"
         
         try:
             # Prepare context-enhanced prompt

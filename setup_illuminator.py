@@ -1,22 +1,280 @@
 #!/usr/bin/env python3
 """
-iLLuMinator LLM Setup Script
-Interactive setup for configuring iLLuMinator-4.7B with Nexus CLI
+Setup script for iLLuMinator-4.7B model
+Downloads and sets up the model from the GitHub repository: https://github.com/Anipaleja/iLLuMinator-4.7B
 """
 
 import os
-import json
 import sys
 import subprocess
+import logging
 from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
-from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.text import Text
-from rich.align import Align
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 console = Console()
+
+class iLLuMinatorSetup:
+    """Setup class for iLLuMinator-4.7B model"""
+    
+    def __init__(self):
+        self.model_dir = Path("./model/nexus_model")
+        self.github_repo = "Anipaleja/iLLuMinator-4.7B"
+        self.model_files = [
+            "config.json",
+            "tokenizer.json", 
+            "tokenizer_config.json",
+            "vocab.json",
+            "merges.txt",
+            "model.safetensors",
+            "generation_config.json"
+        ]
+    
+    def show_banner(self):
+        """Display setup banner"""
+        banner_text = """
+[bold blue]iLLuMinator-4.7B Model Setup[/bold blue]
+[dim]Repository: https://github.com/Anipaleja/iLLuMinator-4.7B[/dim]
+[dim]Setting up local AI model for Nexus CLI[/dim]
+        """
+        console.print(Panel(banner_text, border_style="blue"))
+    
+    def install_dependencies(self):
+        """Install required dependencies"""
+        console.print("\n[yellow]Installing dependencies...[/yellow]")
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        ) as progress:
+            task = progress.add_task("Installing Python packages...", total=None)
+            
+            try:
+                subprocess.check_call([
+                    sys.executable, "-m", "pip", "install", "-r", "requirements.txt"
+                ], capture_output=True)
+                
+                progress.update(task, description="✓ Dependencies installed successfully!")
+                console.print("[green]✓ Dependencies installed successfully[/green]")
+                return True
+            except subprocess.CalledProcessError as e:
+                progress.update(task, description="✗ Failed to install dependencies")
+                console.print(f"[red]Failed to install dependencies: {e}[/red]")
+                return False
+    
+    def create_model_directory(self):
+        """Create model directory structure"""
+        console.print("\n[yellow]Creating model directory...[/yellow]")
+        
+        try:
+            self.model_dir.mkdir(parents=True, exist_ok=True)
+            console.print(f"[green]✓ Model directory created: {self.model_dir}[/green]")
+            return True
+        except Exception as e:
+            console.print(f"[red]Failed to create model directory: {e}[/red]")
+            return False
+    
+    def download_model_from_hf(self):
+        """Download model from Hugging Face Hub"""
+        console.print("\n[yellow]Downloading iLLuMinator-4.7B model...[/yellow]")
+        console.print("[dim]This may take several minutes depending on your internet connection[/dim]")
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        ) as progress:
+            task = progress.add_task("Downloading model files...", total=None)
+            
+            try:
+                # Try to import huggingface_hub
+                try:
+                    from huggingface_hub import snapshot_download
+                except ImportError:
+                    progress.update(task, description="Installing huggingface_hub...")
+                    subprocess.check_call([
+                        sys.executable, "-m", "pip", "install", "huggingface_hub"
+                    ])
+                    from huggingface_hub import snapshot_download
+                
+                progress.update(task, description="Downloading iLLuMinator-4.7B...")
+                
+                snapshot_download(
+                    repo_id=self.github_repo,
+                    local_dir=str(self.model_dir),
+                    token=None,  # Public model
+                    resume_download=True
+                )
+                
+                progress.update(task, description="✓ Model downloaded successfully!")
+                console.print("[green]✓ Model downloaded successfully[/green]")
+                return True
+                
+            except Exception as e:
+                progress.update(task, description="✗ Failed to download model")
+                console.print(f"[red]Failed to download model: {e}[/red]")
+                return False
+    
+    def verify_model_files(self):
+        """Verify that all required model files are present"""
+        console.print("\n[yellow]Verifying model files...[/yellow]")
+        
+        missing_files = []
+        present_files = []
+        
+        for file in self.model_files:
+            file_path = self.model_dir / file
+            if file_path.exists():
+                present_files.append(file)
+            else:
+                missing_files.append(file)
+        
+        # Show status
+        for file in present_files:
+            console.print(f"[green]✓ {file}[/green]")
+        
+        for file in missing_files:
+            console.print(f"[red]✗ {file}[/red]")
+        
+        if missing_files:
+            console.print(f"[yellow]Warning: {len(missing_files)} files missing[/yellow]")
+            return False
+        else:
+            console.print("[green]✓ All required model files present[/green]")
+            return True
+    
+    def test_model_loading(self):
+        """Test if the model can be loaded"""
+        console.print("\n[yellow]Testing model loading...[/yellow]")
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        ) as progress:
+            task = progress.add_task("Loading iLLuMinator-4.7B model...", total=None)
+            
+            try:
+                from model.illuminator_api import iLLuMinatorAPI
+                
+                # Try to load the model
+                model = iLLuMinatorAPI(str(self.model_dir))
+                
+                if model.is_available():
+                    progress.update(task, description="Testing model generation...")
+                    
+                    # Test generation
+                    test_response = model.generate_response("Hello", max_length=10, temperature=0.5)
+                    if test_response and len(test_response.strip()) > 0:
+                        progress.update(task, description="✓ Model test successful!")
+                        console.print("[green]✓ Model loaded and tested successfully[/green]")
+                        return True
+                    else:
+                        progress.update(task, description="✗ Model generation failed")
+                        console.print("[red]Model loaded but generation test failed[/red]")
+                        return False
+                else:
+                    progress.update(task, description="✗ Model failed to load")
+                    console.print("[red]Model failed to load[/red]")
+                    return False
+                    
+            except Exception as e:
+                progress.update(task, description="✗ Model loading test failed")
+                console.print(f"[red]Model loading test failed: {e}[/red]")
+                return False
+    
+    def create_model_info_file(self):
+        """Create model info file"""
+        console.print("\n[yellow]Creating model configuration...[/yellow]")
+        
+        model_info = {
+            "name": "iLLuMinator-4.7B",
+            "version": "4.7B", 
+            "repository": f"https://github.com/{self.github_repo}",
+            "huggingface": f"https://huggingface.co/{self.github_repo}",
+            "model_path": str(self.model_dir),
+            "setup_complete": True,
+            "local_model": True
+        }
+        
+        try:
+            import json
+            with open(self.model_dir / "model_info.json", "w") as f:
+                json.dump(model_info, f, indent=2)
+            
+            console.print("[green]✓ Model configuration created[/green]")
+            return True
+        except Exception as e:
+            console.print(f"[red]Failed to create model configuration: {e}[/red]")
+            return False
+    
+    def run_setup(self):
+        """Run the complete setup process"""
+        self.show_banner()
+        
+        # Ask user confirmation
+        if not Confirm.ask("\n[cyan]Do you want to set up iLLuMinator-4.7B model?[/cyan]"):
+            console.print("[yellow]Setup cancelled.[/yellow]")
+            return False
+        
+        steps = [
+            ("Installing dependencies", self.install_dependencies),
+            ("Creating model directory", self.create_model_directory), 
+            ("Downloading model", self.download_model_from_hf),
+            ("Verifying model files", self.verify_model_files),
+            ("Testing model loading", self.test_model_loading),
+            ("Creating configuration", self.create_model_info_file)
+        ]
+        
+        for i, (step_name, step_func) in enumerate(steps, 1):
+            console.print(f"\n[bold]Step {i}/{len(steps)}: {step_name}[/bold]")
+            if not step_func():
+                console.print(f"[red]Setup failed at step: {step_name}[/red]")
+                return False
+        
+        # Success message
+        success_text = """
+[bold green]🎉 Setup Completed Successfully![/bold green]
+
+[green]✓ iLLuMinator-4.7B model installed[/green]
+[green]✓ Model tested and working[/green]
+[green]✓ Configuration complete[/green]
+
+[bold]Model Location:[/bold] {model_dir}
+[bold]Repository:[/bold] https://github.com/Anipaleja/iLLuMinator-4.7B
+
+[cyan]To start using the CLI:[/cyan]
+[bold]python nexus_cli.py[/bold]
+        """.format(model_dir=self.model_dir)
+        
+        console.print(Panel(success_text, border_style="green"))
+        return True
+
+def main():
+    """Main setup function"""
+    setup = iLLuMinatorSetup()
+    
+    try:
+        success = setup.run_setup()
+        if not success:
+            console.print("\n[red]Setup incomplete. Please resolve issues and try again.[/red]")
+            sys.exit(1)
+    except KeyboardInterrupt:
+        console.print("\n\n[yellow]Setup cancelled by user.[/yellow]")
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"\n[red]Unexpected error during setup: {e}[/red]")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
 
 def show_banner():
     """Display the setup banner."""

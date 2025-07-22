@@ -1,6 +1,7 @@
 """
 Nexus Model - Direct integration with iLLuMinator-4.7B
 Provides advanced code generation and analysis using the actual iLLuMinator-4.7B model
+Repository: https://github.com/Anipaleja/iLLuMinator-4.7B
 """
 
 import logging
@@ -9,12 +10,11 @@ import ast
 import json
 import os
 import time
-import torch
 from typing import Optional, Dict, List, Any
 from pathlib import Path
 
 # Import the actual iLLuMinator-4.7B model
-from .illuminator_ai import IlluminatorAI
+from .illuminator_api import iLLuMinatorAPI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,23 +24,27 @@ logger = logging.getLogger(__name__)
 class NexusModel:
     """
     Nexus model using actual iLLuMinator-4.7B transformer model
-    Provides advanced code generation and conversation using local GPU/CPU processing
+    Provides advanced code generation and conversation using local processing
     """
     
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, model_path: Optional[str] = None):
         """Initialize the Nexus model with iLLuMinator-4.7B."""
         logger.info("Initializing Nexus model with iLLuMinator-4.7B...")
         
         try:
             # Initialize the actual iLLuMinator-4.7B model
             logger.info("Loading iLLuMinator-4.7B transformer model...")
-            self.llm = IlluminatorAI()
-            self.model_available = True
+            self.llm = iLLuMinatorAPI(model_path)
+            
+            if self.llm.is_available():
+                self.model_available = True
+                logger.info("✓ iLLuMinator-4.7B model loaded successfully!")
+            else:
+                self.model_available = False
+                logger.warning("iLLuMinator-4.7B model failed to load, using basic mode")
             
             # Initialize code analyzer
             self.code_analyzer = CodeAnalyzer()
-            
-            logger.info("✓ iLLuMinator-4.7B model loaded successfully!")
             
         except Exception as e:
             logger.error(f"Error initializing iLLuMinator-4.7B model: {str(e)}")
