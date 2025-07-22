@@ -72,7 +72,7 @@ class NexusModel:
             logger.error(f"Code generation error: {str(e)}")
             return f"[Error] Code generation failed: {str(e)}"
     
-    def generate_response(self, prompt: str, max_length: int = 256, temperature: float = 0.7) -> str:
+    def generate_response(self, prompt: str, max_length: int = 512, temperature: float = 0.7) -> str:
         """Generate conversational response using iLLuMinator-4.7B model."""
         if not self.model_available or not self.api:
             return "I apologize, but the iLLuMinator model is not currently available. Please check your connection."

@@ -1077,8 +1077,29 @@ def main():
         if args.query:
             cli.console.print("[bold blue]Nexus CLI - Fast Query Mode[/bold blue]")
             try:
-                response = cli.model.generate_response(args.query)
-                cli.console.print(Panel(response, title="Response", border_style="blue"))
+                # Parse and handle the query as if it were a CLI command
+                query_parts = args.query.strip().split()
+                
+                if len(query_parts) >= 2 and query_parts[0].lower() == "code":
+                    # Handle code generation command
+                    if len(query_parts) >= 3 and query_parts[1].lower() in ['python', 'rust', 'javascript', 'java', 'c', 'cpp', 'go', 'php', 'ruby', 'swift', 'kotlin']:
+                        # Format: code <language> <instruction>
+                        language = query_parts[1].lower()
+                        instruction = " ".join(query_parts[2:])
+                        code = cli.model.generate_code(instruction, language)
+                        highlighted_code = cli.code_tools.syntax_highlight(code, language)
+                        cli.console.print(Panel(highlighted_code, title=f"{language.title()} Code", border_style="green"))
+                    else:
+                        # Format: code <instruction> (default to Python)
+                        instruction = " ".join(query_parts[1:])
+                        code = cli.model.generate_code(instruction, "python")
+                        highlighted_code = cli.code_tools.syntax_highlight(code, "python")
+                        cli.console.print(Panel(highlighted_code, title="Python Code", border_style="green"))
+                else:
+                    # Handle as regular conversational query
+                    response = cli.model.generate_response(args.query)
+                    cli.console.print(Panel(response, title="Response", border_style="blue"))
+                    
             except Exception as e:
                 cli.console.print(f"[red]Error processing query: {str(e)}[/red]")
         else:

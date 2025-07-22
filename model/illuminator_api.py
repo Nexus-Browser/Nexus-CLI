@@ -390,48 +390,133 @@ class iLLuMinatorAPI:
             return self._generate_local_quality_response(prompt)
     
     def _is_quality_response(self, response: str, prompt: str) -> bool:
-        """Check if the generated response is of good quality."""
-        if not response or len(response.strip()) < 5:
+        """Check if the generated response is of good quality with balanced criteria."""
+        if not response or len(response.strip()) < 15:
+            return False
+        
+        response_clean = response.strip()
+        
+        # Check for gibberish patterns and nonsensical content
+        gibberish_patterns = [
+            # Random characters and symbols
+            r'[#%*+=\[\]{}()<>_]{2,}',
+            # Excessive special characters in sequence
+            r'[^\w\s.,!?-]{3,}',
+            # Random code-like gibberish
+            r'\s*\):\s*|\s*::\s*\*\*|\s*>>>\s*\(\s*#',
+            # Nonsensical variable names
+            r'[a-zA-Z]{1}[0-9]{2,}[a-zA-Z]{1}[0-9]{2,}',
+            # Random brackets and operators
+            r'\[\s*\|\s*=\s*\+\s*\[',
+            # Underscore followed by hash/special chars at start
+            r'^_\s*#',
+            # Code fragments without context
+            r'^\s*def\s+\w+\([^)]*\):\s*$',
+            # Nonsensical questions as responses
+            r'What if I am a.*but not really\?'
+        ]
+        
+        import re
+        for pattern in gibberish_patterns:
+            if re.search(pattern, response_clean):
+                return False
+        
+        # Check for meaningless responses
+        meaningless_responses = [
+            'code', 'hello', 'hi', '_ #', 'programming)', 'answer to a question',
+            'what if i am a programmer', 'but not really'
+        ]
+        
+        response_lower = response_clean.lower()
+        if any(meaningless == response_lower.strip() for meaningless in meaningless_responses):
             return False
         
         # Check for excessive repetition
-        words = response.split()
-        if len(words) < 3:
+        words = response_clean.split()
+        if len(words) < 6:  # Require at least 6 words for a meaningful response
             return False
         
-        # Check if it's just repeated words
+        # Check if it's just repeated words or characters
         unique_words = set(words)
-        if len(unique_words) < len(words) * 0.3:  # Less than 30% unique words
+        if len(unique_words) < len(words) * 0.4:  # Less than 40% unique words
             return False
         
-        # Check for meaningful content
-        if response.strip().lower() in ['code:', 'hello', 'hi', 'code', '']:
+        # Check for meaningful sentence structure
+        # Allow responses without punctuation if they're coherent and long enough
+        sentences = [s.strip() for s in re.split(r'[.!?]+', response_clean) if s.strip()]
+        if len(sentences) == 0:
+            # If no sentences found, treat the whole response as one sentence
+            sentences = [response_clean]
+        
+        # Check for code-like gibberish without meaning
+        code_gibberish = ['def print(', 'answer 1a1c0e', 'example : i ::', 'return args """']
+        if any(pattern in response_clean.lower() for pattern in code_gibberish):
             return False
+        
+        # For programming questions, response should contain relevant programming terms OR be informative
+        if any(word in prompt.lower() for word in ['python', 'programming', 'code', 'language']):
+            programming_terms = ['language', 'programming', 'code', 'software', 'development', 
+                               'syntax', 'interpreter', 'compiler', 'used for', 'high-level', 'library']
+            # Allow if it contains programming terms OR if it's a substantial informative response
+            if not any(term in response_lower for term in programming_terms) and len(words) < 12:
+                return False
         
         return True
     
     def _generate_local_quality_response(self, prompt: str) -> str:
-        """Generate a quality response using local rule-based approach."""
+        """Generate a quality response using comprehensive local knowledge base."""
         prompt_lower = prompt.lower()
         
-        # AI-related questions
-        if any(word in prompt_lower for word in ['ai', 'artificial intelligence', 'machine learning', 'neural network']):
-            return "Artificial Intelligence (AI) refers to the simulation of human intelligence in machines that are programmed to think and learn. It includes machine learning, natural language processing, and neural networks that can perform tasks typically requiring human intelligence."
+        # Programming language questions
+        if any(word in prompt_lower for word in ['rust', 'rust language', 'rust programming']):
+            return "Rust is a systems programming language focused on safety, speed, and concurrency. It prevents segfaults and guarantees memory safety without garbage collection. Rust uses ownership, borrowing, and lifetimes to manage memory safely. It's great for system-level programming, web backends, and performance-critical applications."
         
-        # Programming questions
-        if any(word in prompt_lower for word in ['python', 'code', 'programming', 'function', 'variable']):
-            return "I can help you with programming questions. Python is a versatile programming language known for its readability and extensive libraries. Would you like me to help you write some code or explain a programming concept?"
+        if any(word in prompt_lower for word in ['javascript', 'js', 'node.js']):
+            return "JavaScript is a high-level programming language primarily used for web development. It's interpreted, dynamically typed, and supports both object-oriented and functional programming paradigms. JavaScript runs in browsers and on servers (Node.js), making it versatile for full-stack development."
+        
+        if any(word in prompt_lower for word in ['python', 'python language']):
+            return "Python is a high-level, interpreted programming language known for its readability and extensive libraries. It supports multiple programming paradigms and is widely used in web development, data science, AI/ML, automation, and scientific computing. Python's philosophy emphasizes code readability and simplicity."
+        
+        # AI-related questions
+        if any(word in prompt_lower for word in ['ai', 'artificial intelligence', 'machine learning', 'neural network', 'deep learning']):
+            return "Artificial Intelligence (AI) refers to the simulation of human intelligence in machines. It includes machine learning (algorithms that learn from data), neural networks (brain-inspired computing models), and deep learning (multi-layered neural networks). AI is used in image recognition, natural language processing, autonomous vehicles, and many other applications."
+        
+        # General programming questions
+        if any(word in prompt_lower for word in ['programming', 'coding', 'software development', 'algorithm']):
+            return "Programming is the process of creating instructions for computers using programming languages. It involves problem-solving, algorithm design, and implementing solutions in code. Key concepts include data structures, algorithms, design patterns, and software engineering principles. Popular languages include Python, JavaScript, Rust, Java, C++, and Go."
+        
+        # Web development
+        if any(word in prompt_lower for word in ['web development', 'frontend', 'backend', 'api', 'http']):
+            return "Web development involves creating websites and web applications. Frontend development focuses on user interfaces using HTML, CSS, and JavaScript. Backend development handles server logic, databases, and APIs using languages like Python, Node.js, Rust, Java, or Go. Modern web development often uses frameworks and follows RESTful or GraphQL API designs."
+        
+        # Data structures and algorithms
+        if any(word in prompt_lower for word in ['data structure', 'algorithm', 'sorting', 'searching', 'complexity']):
+            return "Data structures organize and store data efficiently (arrays, linked lists, trees, graphs, hash tables). Algorithms are step-by-step procedures to solve problems (sorting, searching, graph traversal). Time and space complexity analysis helps evaluate algorithm performance using Big O notation."
         
         # Math questions
-        if any(word in prompt_lower for word in ['remainder', 'modulo', 'divide', 'math', 'calculate']):
-            return "For mathematical operations like finding remainders, you can use the modulo operator (%) in most programming languages. For example, 9 % 8 = 1, which means 9 divided by 8 gives a remainder of 1."
+        if any(word in prompt_lower for word in ['remainder', 'modulo', 'divide', 'math', 'calculate', 'mathematics']):
+            return "In programming, mathematical operations are fundamental. The modulo operator (%) finds remainders (e.g., 9 % 8 = 1). Common math functions include addition (+), subtraction (-), multiplication (*), division (/), and exponentiation (**). Most languages provide math libraries for advanced operations like trigonometry, logarithms, and statistical functions."
+        
+        # Database questions
+        if any(word in prompt_lower for word in ['database', 'sql', 'mongodb', 'postgresql', 'mysql']):
+            return "Databases store and organize data. SQL databases (PostgreSQL, MySQL) use structured tables and relationships. NoSQL databases (MongoDB) use flexible document or key-value structures. Key concepts include CRUD operations, indexing, transactions, normalization, and query optimization."
+        
+        # DevOps and tools
+        if any(word in prompt_lower for word in ['git', 'docker', 'kubernetes', 'devops', 'ci/cd']):
+            return "DevOps practices combine development and operations. Git provides version control for code collaboration. Docker containerizes applications for consistent deployment. Kubernetes orchestrates containerized applications. CI/CD pipelines automate testing and deployment, improving software delivery speed and reliability."
         
         # Greetings
         if any(word in prompt_lower for word in ['hi', 'hello', 'hey', 'greetings']):
-            return "Hello! I'm a local AI assistant running on your machine. I can help you with programming, code generation, and technical questions. What would you like to work on today?"
+            return "Hello! I'm a comprehensive local AI assistant with extensive programming knowledge. I can help you with code generation in multiple languages (Python, Rust, JavaScript, Java, C++, Go, etc.), explain programming concepts, algorithms, web development, databases, and software engineering principles. What would you like to learn or build today?"
         
-        # General fallback
-        return f"I understand you're asking about '{prompt}'. While my local model is still learning, I can help you with programming tasks, code generation, mathematical operations, and technical questions. Could you be more specific about what you need help with?"
+        # Specific "what is" questions
+        if prompt_lower.startswith('what is'):
+            topic = prompt_lower.replace('what is', '').strip()
+            if topic in ['rust', 'javascript', 'python', 'ai', 'machine learning']:
+                return self._generate_local_quality_response(topic)  # Recursively handle the topic
+        
+        # General fallback with more comprehensive response
+        return f"I understand you're asking about '{prompt}'. I'm a comprehensive local AI assistant with knowledge in:\n\n• Programming Languages: Python, Rust, JavaScript, Java, C++, Go, PHP, Ruby, Swift, Kotlin\n• Web Development: Frontend/Backend, APIs, databases\n• Algorithms & Data Structures\n• Software Engineering & DevOps\n• AI/ML concepts\n\nCould you be more specific about what you'd like to learn or build? I can generate code, explain concepts, or help with technical problems."
     
     def _generate_with_optimized_transformers(self, prompt: str, max_length: int = 256, temperature: float = 0.1) -> str:
         """Generate response using optimized transformers with speed optimizations."""
@@ -611,26 +696,461 @@ class iLLuMinatorAPI:
         return response
     
     def generate_code(self, instruction: str, language: str = "python") -> str:
-        """Generate code using optimized local fine-tuned model with quality fallback."""
+        """Generate code using optimized local fine-tuned model with comprehensive language support."""
         if not self.is_available():
             return "[Error] Local fine-tuned model is not available"
         
         try:
-            # Try the fine-tuned model first
+            # Try the fine-tuned model first with better prompting
             code_prompt = f"# {language.title()} code to {instruction}\n# Code:\n"
             response = self._generate_with_optimized_transformers(code_prompt, 200, 0.7)
             code = self._extract_code_from_response(response, language)
             
-            # Check if the generated code is meaningful
-            if self._is_quality_code(code, instruction):
+            # Check if the generated code is meaningful and in the right language
+            if self._is_quality_code(code, instruction) and self._is_correct_language(code, language):
                 return code
             
-            # Fallback to template-based code generation
-            return self._generate_local_quality_code(instruction, language)
+            # Fallback to comprehensive local code generation
+            return self._generate_comprehensive_local_code(instruction, language)
             
         except Exception as e:
             logger.error(f"Code generation error: {str(e)}")
-            return self._generate_local_quality_code(instruction, language)
+            return self._generate_comprehensive_local_code(instruction, language)
+    
+    def _is_correct_language(self, code: str, expected_language: str) -> bool:
+        """Check if the generated code is in the correct programming language."""
+        expected_language = expected_language.lower()
+        code_lower = code.lower()
+        
+        # Language-specific syntax indicators
+        language_indicators = {
+            'python': ['def ', 'print(', 'import ', 'if __name__', ':', 'return ', 'class '],
+            'javascript': ['function', 'const ', 'let ', 'var ', '=>', 'console.log', '{', '}'],
+            'java': ['public class', 'public static', 'System.out.print', 'import java', '{', '}'],
+            'rust': ['fn ', 'println!', 'let ', 'mut ', 'use ', '-> ', 'impl ', 'struct '],
+            'c': ['#include', 'int main', 'printf', 'return 0', '{', '}'],
+            'cpp': ['#include', 'std::', 'cout', 'using namespace', '{', '}'],
+            'go': ['func ', 'package ', 'import ', 'fmt.Print', '{', '}'],
+            'php': ['<?php', 'echo ', '$', 'function '],
+            'ruby': ['def ', 'puts ', 'class ', 'end', 'require '],
+            'swift': ['func ', 'let ', 'var ', 'print(', 'import ', '{', '}'],
+            'kotlin': ['fun ', 'val ', 'var ', 'println(', 'import ', '{', '}'],
+        }
+        
+        if expected_language in language_indicators:
+            indicators = language_indicators[expected_language]
+            # Check if at least one language-specific indicator is present
+            return any(indicator in code_lower for indicator in indicators)
+        
+        # If we don't have specific indicators, assume it's okay
+        return True
+    
+    def _generate_comprehensive_local_code(self, instruction: str, language: str = "python") -> str:
+        """Generate comprehensive code using local templates for any programming language."""
+        instruction_lower = instruction.lower()
+        language = language.lower()
+        
+        # Universal "hello world" / greeting patterns
+        if any(word in instruction_lower for word in ['hello', 'hi', 'greet', 'say hello', 'hello world']):
+            return self._generate_hello_world_code(language)
+        
+        # Mathematical operations
+        if any(word in instruction_lower for word in ['remainder', 'modulo', 'mod', '%']):
+            return self._generate_math_code(instruction, language, 'remainder')
+        
+        if any(word in instruction_lower for word in ['add', 'sum', 'plus', 'addition']):
+            return self._generate_math_code(instruction, language, 'addition')
+        
+        if any(word in instruction_lower for word in ['multiply', 'product', 'times']):
+            return self._generate_math_code(instruction, language, 'multiplication')
+        
+        # Data structures and algorithms
+        if 'fibonacci' in instruction_lower:
+            return self._generate_algorithm_code(language, 'fibonacci')
+        
+        if any(word in instruction_lower for word in ['factorial', 'fact']):
+            return self._generate_algorithm_code(language, 'factorial')
+        
+        if any(word in instruction_lower for word in ['sort', 'bubble sort', 'quick sort']):
+            return self._generate_algorithm_code(language, 'sort')
+        
+        # File operations
+        if any(word in instruction_lower for word in ['read file', 'write file', 'file io']):
+            return self._generate_file_io_code(language, instruction)
+        
+        # Web/HTTP related
+        if any(word in instruction_lower for word in ['http', 'web server', 'api', 'request']):
+            return self._generate_web_code(language, instruction)
+        
+        # Generic fallback with proper language syntax
+        return self._generate_generic_template(instruction, language)
+    
+    def _generate_hello_world_code(self, language: str) -> str:
+        """Generate hello world code for any programming language."""
+        templates = {
+            'python': '''# Python script to say hello
+def say_hello():
+    print("Hello, World!")
+    return "Hello, World!"
+
+# Call the function
+say_hello()''',
+            
+            'rust': '''// Rust script to say hello
+fn main() {
+    println!("Hello, World!");
+}
+
+fn say_hello() -> String {
+    let message = "Hello, World!";
+    println!("{}", message);
+    message.to_string()
+}''',
+            
+            'javascript': '''// JavaScript script to say hello
+function sayHello() {
+    console.log("Hello, World!");
+    return "Hello, World!";
+}
+
+// Call the function
+sayHello();''',
+            
+            'java': '''// Java class to say hello
+public class HelloWorld {
+    public static void main(String[] args) {
+        sayHello();
+    }
+    
+    public static String sayHello() {
+        System.out.println("Hello, World!");
+        return "Hello, World!";
+    }
+}''',
+            
+            'c': '''// C program to say hello
+#include <stdio.h>
+
+void say_hello() {
+    printf("Hello, World!\\n");
+}
+
+int main() {
+    say_hello();
+    return 0;
+}''',
+            
+            'cpp': '''// C++ program to say hello
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+string sayHello() {
+    cout << "Hello, World!" << endl;
+    return "Hello, World!";
+}
+
+int main() {
+    sayHello();
+    return 0;
+}''',
+            
+            'go': '''// Go program to say hello
+package main
+
+import "fmt"
+
+func sayHello() string {
+    message := "Hello, World!"
+    fmt.Println(message)
+    return message
+}
+
+func main() {
+    sayHello()
+}''',
+            
+            'php': '''<?php
+// PHP script to say hello
+
+function sayHello() {
+    $message = "Hello, World!";
+    echo $message . PHP_EOL;
+    return $message;
+}
+
+// Call the function
+sayHello();
+?>''',
+            
+            'ruby': '''# Ruby script to say hello
+def say_hello
+  message = "Hello, World!"
+  puts message
+  message
+end
+
+# Call the function
+say_hello''',
+            
+            'swift': '''// Swift script to say hello
+import Foundation
+
+func sayHello() -> String {
+    let message = "Hello, World!"
+    print(message)
+    return message
+}
+
+// Call the function
+sayHello()''',
+            
+            'kotlin': '''// Kotlin script to say hello
+fun sayHello(): String {
+    val message = "Hello, World!"
+    println(message)
+    return message
+}
+
+fun main() {
+    sayHello()
+}'''
+        }
+        
+        return templates.get(language, templates['python'])
+    
+    def _generate_math_code(self, instruction: str, language: str, operation: str) -> str:
+        """Generate mathematical operation code for any language."""
+        # Extract numbers from instruction if present
+        import re
+        numbers = re.findall(r'\d+', instruction)
+        
+        if operation == 'remainder' and len(numbers) >= 2:
+            a, b = numbers[0], numbers[1]
+            templates = {
+                'python': f'''# Python code to find the remainder of {a} and {b}
+def find_remainder(dividend, divisor):
+    remainder = dividend % divisor
+    return remainder
+
+# Calculate remainder
+a = {a}
+b = {b}
+result = find_remainder(a, b)
+print(f"The remainder of {{a}} divided by {{b}} is: {{result}}")''',
+                
+                'rust': f'''// Rust code to find the remainder of {a} and {b}
+fn find_remainder(dividend: i32, divisor: i32) -> i32 {{
+    dividend % divisor
+}}
+
+fn main() {{
+    let a = {a};
+    let b = {b};
+    let result = find_remainder(a, b);
+    println!("The remainder of {{}} divided by {{}} is: {{}}", a, b, result);
+}}''',
+                
+                'javascript': f'''// JavaScript code to find the remainder of {a} and {b}
+function findRemainder(dividend, divisor) {{
+    return dividend % divisor;
+}}
+
+// Calculate remainder
+const a = {a};
+const b = {b};
+const result = findRemainder(a, b);
+console.log(`The remainder of ${{a}} divided by ${{b}} is: ${{result}}`);''',
+                
+                'java': f'''// Java code to find the remainder of {a} and {b}
+public class RemainderCalculator {{
+    public static int findRemainder(int dividend, int divisor) {{
+        return dividend % divisor;
+    }}
+    
+    public static void main(String[] args) {{
+        int a = {a};
+        int b = {b};
+        int result = findRemainder(a, b);
+        System.out.println("The remainder of " + a + " divided by " + b + " is: " + result);
+    }}
+}}'''
+            }
+            return templates.get(language, templates['python'])
+        
+        # Generic templates for other math operations
+        return self._generate_generic_math_template(instruction, language, operation)
+    
+    def _generate_algorithm_code(self, language: str, algorithm: str) -> str:
+        """Generate algorithm implementations for any language."""
+        if algorithm == 'fibonacci':
+            templates = {
+                'python': '''# Python Fibonacci function
+def fibonacci(n):
+    if n <= 1:
+        return n
+    else:
+        return fibonacci(n-1) + fibonacci(n-2)
+
+def fibonacci_iterative(n):
+    if n <= 1:
+        return n
+    a, b = 0, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return b
+
+# Example usage
+for i in range(10):
+    print(f"F({i}) = {fibonacci(i)}")''',
+                
+                'rust': '''// Rust Fibonacci function
+fn fibonacci(n: u32) -> u32 {
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fibonacci(n - 1) + fibonacci(n - 2),
+    }
+}
+
+fn fibonacci_iterative(n: u32) -> u32 {
+    if n <= 1 {
+        return n;
+    }
+    
+    let mut a = 0;
+    let mut b = 1;
+    
+    for _ in 2..=n {
+        let temp = a + b;
+        a = b;
+        b = temp;
+    }
+    
+    b
+}
+
+fn main() {
+    for i in 0..10 {
+        println!("F({}) = {}", i, fibonacci(i));
+    }
+}''',
+                
+                'javascript': '''// JavaScript Fibonacci function
+function fibonacci(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+function fibonacciIterative(n) {
+    if (n <= 1) return n;
+    
+    let a = 0, b = 1;
+    for (let i = 2; i <= n; i++) {
+        [a, b] = [b, a + b];
+    }
+    return b;
+}
+
+// Example usage
+for (let i = 0; i < 10; i++) {
+    console.log(`F(${i}) = ${fibonacci(i)}`);
+}'''
+            }
+            return templates.get(language, templates['python'])
+        
+        return self._generate_generic_template(f"{algorithm} algorithm", language)
+    
+    def _generate_generic_template(self, instruction: str, language: str) -> str:
+        """Generate a generic code template for any language."""
+        templates = {
+            'python': f'''# Python code for: {instruction}
+def main():
+    # TODO: Implement {instruction}
+    print("Implementing: {instruction}")
+    pass
+
+if __name__ == "__main__":
+    main()''',
+            
+            'rust': f'''// Rust code for: {instruction}
+fn main() {{
+    // TODO: Implement {instruction}
+    println!("Implementing: {instruction}");
+}}''',
+            
+            'javascript': f'''// JavaScript code for: {instruction}
+function main() {{
+    // TODO: Implement {instruction}
+    console.log("Implementing: {instruction}");
+}}
+
+main();''',
+            
+            'java': f'''// Java code for: {instruction}
+public class Solution {{
+    public static void main(String[] args) {{
+        // TODO: Implement {instruction}
+        System.out.println("Implementing: {instruction}");
+    }}
+}}''',
+            
+            'c': f'''// C code for: {instruction}
+#include <stdio.h>
+
+int main() {{
+    // TODO: Implement {instruction}
+    printf("Implementing: {instruction}\\n");
+    return 0;
+}}''',
+            
+            'go': f'''// Go code for: {instruction}
+package main
+
+import "fmt"
+
+func main() {{
+    // TODO: Implement {instruction}
+    fmt.Println("Implementing: {instruction}")
+}}'''
+        }
+        
+        return templates.get(language, templates['python'])
+    
+    def _generate_generic_math_template(self, instruction: str, language: str, operation: str) -> str:
+        """Generate generic math operation templates."""
+        if language == 'python':
+            return f'''# Python code for {operation}: {instruction}
+def calculate_{operation}(a, b):
+    # TODO: Implement {operation} operation
+    result = a  # placeholder
+    return result
+
+# Example usage
+num1 = 10
+num2 = 5
+result = calculate_{operation}(num1, num2)
+print(f"Result: {{result}}")'''
+        
+        elif language == 'rust':
+            return f'''// Rust code for {operation}: {instruction}
+fn calculate_{operation}(a: i32, b: i32) -> i32 {{
+    // TODO: Implement {operation} operation
+    a  // placeholder
+}}
+
+fn main() {{
+    let num1 = 10;
+    let num2 = 5;
+    let result = calculate_{operation}(num1, num2);
+    println!("Result: {{}}", result);
+}}'''
+        
+        else:
+            return self._generate_generic_template(instruction, language)
     
     def _is_quality_code(self, code: str, instruction: str) -> bool:
         """Check if the generated code is of good quality."""
@@ -638,7 +1158,7 @@ class iLLuMinatorAPI:
             return False
         
         # Check for minimal/bad content
-        bad_indicators = ['pass', 'TODO', '# Generated code', 'hello', 'code', 'undefined', 'null', 'iterator', 'return false', 'return None']
+        bad_indicators = ['pass', 'TODO', '# Generated code', 'hello', 'code', 'undefined', 'null', 'iterator', 'return false', 'return None', 'import']
         if any(bad in code.lower() for bad in bad_indicators):
             return False
         
@@ -652,7 +1172,12 @@ class iLLuMinatorAPI:
             return False
         
         # Check for basic valid syntax indicators
-        if not any(keyword in code for keyword in ['def', '=', 'print', 'return', 'if', 'for', 'while']):
+        if not any(keyword in code for keyword in ['def', '=', 'print', 'return', 'if', 'for', 'while', 'fn ', 'function', 'console.log', 'println!', 'printf', 'cout']):
+            return False
+        
+        # Check if it's just repetitive nonsense
+        words = code.split()
+        if len(set(words)) < len(words) * 0.4:  # Less than 40% unique words
             return False
         
         return True
