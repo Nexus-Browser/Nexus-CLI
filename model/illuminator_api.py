@@ -27,6 +27,7 @@ class ExternalKnowledgeAPIs:
     """
     Integration with external knowledge APIs to enhance CLI intelligence
     Uses documentation, package registry, and code repository APIs
+    Now includes natural language developer question answering
     """
     
     def __init__(self):
@@ -47,6 +48,26 @@ class ExternalKnowledgeAPIs:
             'crates_io': 'https://crates.io/api/v1/crates',
             'go_modules': 'https://proxy.golang.org',
             'wikipedia': 'https://en.wikipedia.org/api/rest_v1/page/summary'
+        }
+        
+        # Technology patterns for intelligent query routing
+        self.tech_patterns = {
+            'javascript': ['javascript', 'js', 'node', 'nodejs', 'react', 'vue', 'angular', 'fetch', 'promise', 'async'],
+            'python': ['python', 'django', 'flask', 'fastapi', 'requests', 'asyncio', 'pandas', 'numpy'],
+            'css': ['css', 'styling', 'flexbox', 'grid', 'animation', 'responsive'],
+            'html': ['html', 'dom', 'elements', 'attributes', 'semantic'],
+            'web apis': ['fetch', 'xmlhttprequest', 'websocket', 'geolocation', 'notification'],
+            'frameworks': ['react', 'vue', 'angular', 'svelte', 'express', 'fastapi', 'django'],
+            'rust': ['rust', 'cargo', 'crate', 'rustc', 'ownership', 'borrowing'],
+            'tools': ['webpack', 'vite', 'rollup', 'babel', 'typescript', 'eslint']
+        }
+        
+        # Query type patterns for intelligent response routing
+        self.query_type_patterns = {
+            'api': ['how does', 'what is', 'api', 'method', 'function', 'parameter'],
+            'concept': ['explain', 'concept', 'theory', 'principle', 'pattern'],
+            'tutorial': ['tutorial', 'example', 'how to', 'step by step', 'guide'],
+            'troubleshooting': ['error', 'bug', 'fix', 'problem', 'not working', 'issue']
         }
     
     def search_documentation(self, language: str, query: str) -> Optional[str]:
@@ -328,6 +349,163 @@ class ExternalKnowledgeAPIs:
         except Exception as e:
             logger.debug(f"Web scraping failed for {url}: {e}")
         return None
+    
+    def answer_developer_question(self, question: str) -> str:
+        """
+        Natural Language Developer Assistant - Main entry point
+        Answers developer questions using real-time web APIs and intelligent routing
+        """
+        try:
+            # Parse and analyze the question
+            parsed_info = self._parse_developer_question(question)
+            logger.info(f"Analyzing question: {parsed_info['query_type']} about {parsed_info['technologies']}")
+            
+            # Get relevant information from multiple sources
+            sources_data = self._gather_multi_source_data(parsed_info)
+            
+            # Synthesize comprehensive response
+            response = self._synthesize_developer_response(question, parsed_info, sources_data)
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Developer question answering failed: {e}")
+            return f"I encountered an error while researching your question: {e}"
+    
+    def _parse_developer_question(self, question: str) -> Dict[str, Any]:
+        """Parse and analyze developer question to determine best search strategy"""
+        question_lower = question.lower()
+        
+        # Detect mentioned technologies
+        detected_technologies = []
+        for tech_category, keywords in self.tech_patterns.items():
+            if any(keyword in question_lower for keyword in keywords):
+                detected_technologies.append(tech_category)
+        
+        # Determine query type
+        query_type = 'concept'  # default
+        for qtype, patterns in self.query_type_patterns.items():
+            if any(pattern in question_lower for pattern in patterns):
+                query_type = qtype
+                break
+        
+        # Extract key terms for API searches
+        stop_words = ['how', 'what', 'why', 'when', 'where', 'does', 'is', 'can', 'should', 'the', 'a', 'an']
+        words = question_lower.split()
+        key_terms = [word for word in words if word not in stop_words and len(word) > 2]
+        normalized_query = ' '.join(key_terms)
+        
+        return {
+            'original_question': question,
+            'normalized_query': normalized_query,
+            'technologies': detected_technologies,
+            'query_type': query_type,
+            'key_terms': key_terms
+        }
+    
+    def _gather_multi_source_data(self, parsed_info: Dict[str, Any]) -> Dict[str, Optional[str]]:
+        """Gather information from multiple relevant sources based on the parsed question"""
+        sources_data = {}
+        query = parsed_info['normalized_query']
+        technologies = parsed_info['technologies']
+        query_type = parsed_info['query_type']
+        
+        # 1. Search official documentation based on detected technologies
+        if any(tech in ['javascript', 'css', 'html', 'web apis'] for tech in technologies):
+            sources_data['mdn'] = self._search_mdn(query)
+        
+        if 'python' in technologies:
+            sources_data['python_docs'] = self._search_python_specific(query)
+        
+        # 2. Search package registries for relevant packages
+        if any(tech in ['javascript', 'frameworks'] for tech in technologies):
+            sources_data['npm'] = self._search_npm(query)
+        
+        if 'python' in technologies:
+            sources_data['pypi'] = self._search_pypi(query)
+        
+        if 'rust' in technologies:
+            sources_data['crates'] = self._search_crates_io(query)
+        
+        # 3. Search Stack Overflow for troubleshooting and examples
+        if query_type in ['troubleshooting', 'tutorial']:
+            sources_data['stackoverflow'] = self.search_stackoverflow(query)
+        
+        # 4. Search for general web information
+        sources_data['web_search'] = self._search_duckduckgo(query)
+        
+        # 5. Search Wikipedia for concepts
+        if query_type == 'concept':
+            sources_data['wikipedia'] = self.search_wikipedia_technical(query)
+        
+        # 6. Get GitHub examples for practical code
+        if technologies:
+            main_tech = technologies[0] if technologies else 'programming'
+            sources_data['github'] = self.search_github_examples(main_tech, query)
+        
+        return sources_data
+    
+    def _search_python_specific(self, query: str) -> Optional[str]:
+        """Enhanced Python-specific documentation search"""
+        # Try to find Python-specific information
+        python_query = f"python {query}"
+        
+        # Search for Python concepts in web
+        result = self._search_duckduckgo(python_query)
+        if result:
+            return f"**Python Information:**\n{result}"
+        
+        # Fallback to general documentation guidance
+        return f"**Python Documentation:**\nFor '{query}', check: https://docs.python.org/3/search.html?q={quote(query)}"
+    
+    def _synthesize_developer_response(self, original_question: str, parsed_info: Dict[str, Any], sources_data: Dict[str, Optional[str]]) -> str:
+        """Synthesize a comprehensive developer response from gathered sources"""
+        
+        # Filter out None results
+        valid_sources = {k: v for k, v in sources_data.items() if v is not None}
+        
+        if not valid_sources:
+            return f"I couldn't find specific information about '{original_question}'. You might want to:\n\n• Check the official documentation for your technology\n• Search Stack Overflow for similar questions\n• Look for recent tutorials on the topic"
+        
+        # Build response sections
+        response_parts = [f"## {original_question}\n"]
+        
+        # Add the most relevant source first
+        primary_sources = ['mdn', 'python_docs', 'stackoverflow', 'web_search']
+        for source in primary_sources:
+            if source in valid_sources:
+                response_parts.append(valid_sources[source])
+                break
+        
+        # Add package information if available
+        package_sources = ['npm', 'pypi', 'crates']
+        package_info = []
+        for source in package_sources:
+            if source in valid_sources:
+                package_info.append(valid_sources[source])
+        
+        if package_info:
+            response_parts.append("\n**Related Packages:**")
+            response_parts.extend(package_info)
+        
+        # Add additional resources
+        additional_sources = []
+        for source, content in valid_sources.items():
+            if source not in primary_sources + package_sources:
+                additional_sources.append(content)
+        
+        if additional_sources:
+            response_parts.append("\n**Additional Resources:**")
+            response_parts.extend(additional_sources[:2])  # Limit to 2 additional sources
+        
+        # Add helpful tips based on query type
+        query_type = parsed_info['query_type']
+        if query_type == 'troubleshooting':
+            response_parts.append("\n**Troubleshooting Tips:**\n• Check your syntax carefully\n• Verify all dependencies are installed\n• Look at the full error message and stack trace")
+        elif query_type == 'tutorial':
+            response_parts.append("\n**Learning Path:**\n• Start with official documentation\n• Practice with small examples\n• Build a simple project to apply concepts")
+        
+        return "\n\n".join(response_parts)
 
 
 class iLLuMinatorAPI:
@@ -944,6 +1122,17 @@ class iLLuMinatorAPI:
                 tutorial_info = self.external_apis._search_tutorials(prompt)
                 if tutorial_info:
                     response_parts.append(tutorial_info)
+            
+            # 8. **NEW: Natural Language Developer Assistant for complex questions**
+            if (any(word in prompt_lower for word in ['how does', 'what is', 'explain', 'why', 'when to use']) or 
+                len(prompt.split()) > 3):  # For more complex questions
+                try:
+                    dev_assistant_response = self.external_apis.answer_developer_question(prompt)
+                    if dev_assistant_response and len(dev_assistant_response) > 100:  # Quality check
+                        # Use the comprehensive developer assistant response
+                        return dev_assistant_response
+                except Exception as e:
+                    logger.debug(f"Developer assistant failed: {e}")
             
             # Combine all information sources
             if response_parts:
