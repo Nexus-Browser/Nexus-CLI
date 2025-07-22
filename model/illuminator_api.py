@@ -9,14 +9,200 @@ import json
 import time
 import logging
 import torch
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Tuple
 from pathlib import Path
 import subprocess
 import sys
+import requests
+import re
+from urllib.parse import quote, urljoin
+import xml.etree.ElementTree as ET
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class ExternalKnowledgeAPIs:
+    """
+    Integration with external knowledge APIs to enhance CLI intelligence
+    Uses documentation, package registry, and code repository APIs
+    """
+    
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.timeout = 5  # Fast timeout for snappy responses
+        self.session.headers.update({
+            'User-Agent': 'Nexus-CLI/1.0 Enhanced Intelligence System'
+        })
+        
+        # API endpoints for different knowledge sources
+        self.endpoints = {
+            'mdn': 'https://developer.mozilla.org/api/v1/search',
+            'devdocs': 'https://devdocs.io',
+            'stackoverflow': 'https://api.stackexchange.com/2.3/search/excerpts',
+            'github_search': 'https://api.github.com/search/code',
+            'npm_registry': 'https://registry.npmjs.org',
+            'pypi': 'https://pypi.org/pypi',
+            'crates_io': 'https://crates.io/api/v1/crates',
+            'go_modules': 'https://proxy.golang.org',
+            'wikipedia': 'https://en.wikipedia.org/api/rest_v1/page/summary'
+        }
+    
+    def search_documentation(self, language: str, query: str) -> Optional[str]:
+        """Search official documentation for programming languages."""
+        try:
+            if language.lower() in ['javascript', 'js', 'html', 'css', 'web']:
+                return self._search_mdn(query)
+            elif language.lower() in ['python', 'rust', 'go', 'ruby']:
+                return self._search_devdocs(language, query)
+            return None
+        except Exception as e:
+            logger.debug(f"Documentation search failed: {e}")
+            return None
+    
+    def _search_mdn(self, query: str) -> Optional[str]:
+        """Search MDN Web Docs for JavaScript/Web technologies."""
+        try:
+            response = self.session.get(
+                f"https://developer.mozilla.org/api/v1/search?q={quote(query)}&locale=en-US",
+                timeout=3
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('documents'):
+                    doc = data['documents'][0]
+                    return f"**{doc.get('title', 'Documentation')}**\n{doc.get('summary', '')}\n\nSource: {doc.get('mdn_url', '')}"
+        except Exception:
+            pass
+        return None
+    
+    def _search_devdocs(self, language: str, query: str) -> Optional[str]:
+        """Search DevDocs for various programming languages."""
+        # DevDocs doesn't have a direct API, but we can construct helpful responses
+        # based on common documentation patterns
+        return None
+    
+    def search_packages(self, language: str, query: str) -> Optional[str]:
+        """Search package registries for libraries and frameworks."""
+        try:
+            if language.lower() in ['javascript', 'js', 'node', 'typescript']:
+                return self._search_npm(query)
+            elif language.lower() == 'python':
+                return self._search_pypi(query)
+            elif language.lower() == 'rust':
+                return self._search_crates_io(query)
+            return None
+        except Exception as e:
+            logger.debug(f"Package search failed: {e}")
+            return None
+    
+    def _search_npm(self, query: str) -> Optional[str]:
+        """Search npm registry for JavaScript packages."""
+        try:
+            response = self.session.get(
+                f"https://registry.npmjs.org/-/v1/search?text={quote(query)}&size=3",
+                timeout=3
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('objects'):
+                    results = []
+                    for obj in data['objects'][:2]:  # Top 2 results
+                        pkg = obj.get('package', {})
+                        results.append(f"**{pkg.get('name')}** - {pkg.get('description', 'No description')}")
+                    return "**NPM Packages:**\n" + "\n".join(results)
+        except Exception:
+            pass
+        return None
+    
+    def _search_pypi(self, query: str) -> Optional[str]:
+        """Search PyPI for Python packages."""
+        try:
+            response = self.session.get(
+                f"https://pypi.org/simple/{query}/",
+                timeout=3
+            )
+            if response.status_code == 200:
+                # Get package info
+                info_response = self.session.get(
+                    f"https://pypi.org/pypi/{query}/json",
+                    timeout=3
+                )
+                if info_response.status_code == 200:
+                    data = info_response.json()
+                    info = data.get('info', {})
+                    return f"**{info.get('name')}** - {info.get('summary', 'No description')}\n\nInstall: `pip install {query}`"
+        except Exception:
+            pass
+        return None
+    
+    def _search_crates_io(self, query: str) -> Optional[str]:
+        """Search crates.io for Rust crates."""
+        try:
+            response = self.session.get(
+                f"https://crates.io/api/v1/crates?q={quote(query)}&per_page=2",
+                timeout=3
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('crates'):
+                    results = []
+                    for crate in data['crates'][:2]:
+                        results.append(f"**{crate.get('name')}** - {crate.get('description', 'No description')}")
+                    return "**Rust Crates:**\n" + "\n".join(results)
+        except Exception:
+            pass
+        return None
+    
+    def search_stackoverflow(self, query: str) -> Optional[str]:
+        """Search Stack Overflow for solutions."""
+        try:
+            response = self.session.get(
+                f"https://api.stackexchange.com/2.3/search/excerpts?order=desc&sort=relevance&q={quote(query)}&site=stackoverflow",
+                timeout=3
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('items'):
+                    item = data['items'][0]
+                    return f"**Stack Overflow Solution:**\n{item.get('excerpt', '')}\n\nScore: {item.get('score', 0)}"
+        except Exception:
+            pass
+        return None
+    
+    def search_github_examples(self, language: str, query: str) -> Optional[str]:
+        """Search GitHub for code examples (requires GitHub token for better rate limits)."""
+        try:
+            # Basic GitHub search without authentication (limited rate)
+            response = self.session.get(
+                f"https://api.github.com/search/code?q={quote(query)}+language:{language}&sort=indexed&order=desc&per_page=1",
+                timeout=3
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('items'):
+                    item = data['items'][0]
+                    return f"**GitHub Example:**\nFile: {item.get('name')}\nRepo: {item.get('repository', {}).get('full_name')}\nURL: {item.get('html_url')}"
+        except Exception:
+            pass
+        return None
+    
+    def search_wikipedia_technical(self, query: str) -> Optional[str]:
+        """Search Wikipedia for technical concepts."""
+        try:
+            response = self.session.get(
+                f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(query)}",
+                timeout=3
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if not data.get('disambiguation') and data.get('extract'):
+                    return f"**Wikipedia - {data.get('title')}:**\n{data.get('extract')[:300]}...\n\nSource: {data.get('content_urls', {}).get('desktop', {}).get('page', '')}"
+        except Exception:
+            pass
+        return None
+
 
 class iLLuMinatorAPI:
     """
@@ -40,6 +226,11 @@ class iLLuMinatorAPI:
         # Optimization settings
         self.max_length = 512 if fast_mode else 1024
         self.use_quantization = fast_mode
+        
+        # Initialize external API integration for enhanced intelligence
+        self.external_apis = ExternalKnowledgeAPIs()
+        self._api_cache = {}
+        self._cache_ttl = 3600  # 1 hour cache
         
         # Device selection
         if self.use_gpu_acceleration:
@@ -470,7 +661,14 @@ class iLLuMinatorAPI:
         # Advanced natural language processing - analyze intent and context
         response = self._analyze_user_intent_and_respond(prompt, prompt_lower)
         if response:
-            return response
+            # Try to enhance with external API data
+            enhanced_response = self._enhance_with_external_knowledge(response, prompt, prompt_lower)
+            return enhanced_response if enhanced_response else response
+        
+        # Try external APIs for enhanced intelligence BEFORE falling back to local knowledge
+        external_response = self._get_enhanced_external_response(prompt, prompt_lower)
+        if external_response:
+            return external_response
         
         # Programming language questions with deep context
         if any(word in prompt_lower for word in ['rust', 'rust language', 'rust programming']):
@@ -522,6 +720,165 @@ class iLLuMinatorAPI:
         
         # General fallback with more comprehensive response
         return f"I understand you're asking about '{prompt}'. I'm a comprehensive local AI assistant with knowledge in:\n\n• Programming Languages: Python, Rust, JavaScript, Java, C++, Go, PHP, Ruby, Swift, Kotlin\n• Web Development: Frontend/Backend, APIs, databases\n• Algorithms & Data Structures\n• Software Engineering & DevOps\n• AI/ML concepts\n\nCould you be more specific about what you'd like to learn or build? I can generate code, explain concepts, or help with technical problems."
+    
+    def _enhance_with_external_knowledge(self, base_response: str, prompt: str, prompt_lower: str) -> Optional[str]:
+        """Enhance existing response with external API knowledge."""
+        try:
+            # Detect language/technology in the prompt
+            language = self._detect_language(prompt_lower)
+            
+            enhancements = []
+            
+            # Try to get documentation
+            if language:
+                doc_info = self.external_apis.search_documentation(language, prompt)
+                if doc_info:
+                    enhancements.append(doc_info)
+            
+            # Try to get package information for installation/library questions
+            if any(word in prompt_lower for word in ['install', 'package', 'library', 'import', 'dependency']):
+                if language:
+                    pkg_info = self.external_apis.search_packages(language, self._extract_package_name(prompt))
+                    if pkg_info:
+                        enhancements.append(pkg_info)
+            
+            # Add Stack Overflow solutions for problem-solving
+            if any(word in prompt_lower for word in ['error', 'issue', 'problem', 'fix', 'debug', 'help']):
+                so_info = self.external_apis.search_stackoverflow(prompt)
+                if so_info:
+                    enhancements.append(so_info)
+            
+            # Combine base response with enhancements
+            if enhancements:
+                enhanced = base_response + "\n\n" + "\n\n".join(enhancements)
+                return enhanced
+            
+        except Exception as e:
+            logger.debug(f"Enhancement failed: {e}")
+        
+        return None
+    
+    def _get_enhanced_external_response(self, prompt: str, prompt_lower: str) -> Optional[str]:
+        """Get enhanced response using external APIs for complex queries."""
+        try:
+            # Check cache first
+            cache_key = f"external_{hash(prompt)}"
+            if cache_key in self._api_cache:
+                cached_data, timestamp = self._api_cache[cache_key]
+                if time.time() - timestamp < self._cache_ttl:
+                    return cached_data
+            
+            # Detect language/technology
+            language = self._detect_language(prompt_lower)
+            
+            # Build comprehensive response from multiple sources
+            response_parts = []
+            
+            # 1. Official Documentation (highest priority)
+            if language and any(word in prompt_lower for word in ['what is', 'explain', 'how does', 'documentation']):
+                doc_info = self.external_apis.search_documentation(language, prompt)
+                if doc_info:
+                    response_parts.append(doc_info)
+            
+            # 2. Package/Library information
+            if any(word in prompt_lower for word in ['library', 'package', 'framework', 'tool']):
+                if language:
+                    pkg_name = self._extract_package_name(prompt)
+                    if pkg_name:
+                        pkg_info = self.external_apis.search_packages(language, pkg_name)
+                        if pkg_info:
+                            response_parts.append(pkg_info)
+            
+            # 3. Stack Overflow community solutions
+            if any(word in prompt_lower for word in ['how to', 'how do', 'example', 'tutorial']):
+                so_info = self.external_apis.search_stackoverflow(prompt)
+                if so_info:
+                    response_parts.append(so_info)
+            
+            # 4. GitHub code examples
+            if language and any(word in prompt_lower for word in ['example', 'sample', 'code', 'implementation']):
+                github_info = self.external_apis.search_github_examples(language, prompt)
+                if github_info:
+                    response_parts.append(github_info)
+            
+            # 5. Wikipedia for technical concepts
+            if any(word in prompt_lower for word in ['algorithm', 'concept', 'theory', 'explain']):
+                wiki_info = self.external_apis.search_wikipedia_technical(self._extract_main_concept(prompt))
+                if wiki_info:
+                    response_parts.append(wiki_info)
+            
+            # Combine all information sources
+            if response_parts:
+                combined_response = "\n\n".join(response_parts)
+                
+                # Add a brief intro explaining the comprehensive nature
+                intro = f"**Comprehensive Answer for: {prompt}**\n\n"
+                final_response = intro + combined_response
+                
+                # Cache the response
+                self._api_cache[cache_key] = (final_response, time.time())
+                
+                return final_response
+            
+        except Exception as e:
+            logger.debug(f"External API response failed: {e}")
+        
+        return None
+    
+    def _detect_language(self, prompt_lower: str) -> Optional[str]:
+        """Detect programming language from the prompt."""
+        language_keywords = {
+            'python': ['python', 'py', 'django', 'flask', 'fastapi', 'pandas', 'numpy'],
+            'javascript': ['javascript', 'js', 'node', 'react', 'vue', 'angular', 'express'],
+            'typescript': ['typescript', 'ts'],
+            'rust': ['rust', 'cargo', 'rustc'],
+            'java': ['java', 'spring', 'maven', 'gradle'],
+            'go': ['golang', 'go lang', 'go language'],
+            'cpp': ['c++', 'cpp', 'cmake'],
+            'csharp': ['c#', 'csharp', 'dotnet', '.net'],
+            'php': ['php', 'laravel', 'symfony'],
+            'ruby': ['ruby', 'rails', 'gem'],
+            'swift': ['swift', 'ios'],
+            'kotlin': ['kotlin', 'android']
+        }
+        
+        for language, keywords in language_keywords.items():
+            if any(keyword in prompt_lower for keyword in keywords):
+                return language
+        
+        return None
+    
+    def _extract_package_name(self, prompt: str) -> str:
+        """Extract potential package name from prompt."""
+        # Simple extraction - look for common patterns
+        words = prompt.lower().split()
+        
+        # Look for patterns like "install pandas", "use express", etc.
+        install_words = ['install', 'use', 'import', 'require', 'add']
+        for i, word in enumerate(words):
+            if word in install_words and i + 1 < len(words):
+                return words[i + 1].strip('.,!?;')
+        
+        # Look for quoted package names
+        import re
+        quoted_match = re.search(r'["\']([^"\']+)["\']', prompt)
+        if quoted_match:
+            return quoted_match.group(1)
+        
+        # Fallback to last word that might be a package name
+        potential_packages = [w for w in words if len(w) > 2 and w.isalpha()]
+        return potential_packages[-1] if potential_packages else ""
+    
+    def _extract_main_concept(self, prompt: str) -> str:
+        """Extract the main technical concept from prompt."""
+        # Remove common question words
+        cleaned = re.sub(r'\b(what|is|are|how|does|do|explain|tell|me|about|the)\b', '', prompt.lower())
+        
+        # Get the most significant words
+        words = [w.strip('.,!?;') for w in cleaned.split() if len(w) > 3]
+        
+        # Return the first significant word or phrase
+        return words[0] if words else prompt.split()[0]
     
     def _analyze_user_intent_and_respond(self, original_prompt: str, prompt_lower: str) -> str:
         """Advanced intent analysis similar to Claude/Gemini/Copilot reasoning."""
@@ -829,10 +1186,196 @@ fn calculate_length(s: &String) -> usize {  // Borrows, doesn't own
 This system prevents entire categories of bugs that plague C/C++ while maintaining performance."""
         
         if 'async' in prompt_lower or 'tokio' in prompt_lower:
-            return self._generate_rust_async_expertise()
+            return """**Rust Async Programming & Tokio - Expert Guide:**
+
+**Why Async Rust:**
+Rust's async model provides zero-cost concurrency without traditional thread overhead.
+
+**Core Concepts:**
+
+**Async/Await Syntax:**
+```rust
+use tokio::time::{sleep, Duration};
+
+async fn fetch_data(url: &str) -> Result<String, reqwest::Error> {
+    let response = reqwest::get(url).await?;
+    let body = response.text().await?;
+    Ok(body)
+}
+
+async fn process_multiple_requests() -> Result<(), Box<dyn std::error::Error>> {
+    let urls = vec!["http://example.com", "http://google.com"];
+    
+    // Concurrent execution
+    let futures = urls.iter().map(|url| fetch_data(url));
+    let results = futures::future::try_join_all(futures).await?;
+    
+    for result in results {
+        println!("Response length: {}", result.len());
+    }
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    process_multiple_requests().await
+}
+```
+
+**Tokio Runtime:**
+Tokio is the de facto async runtime for Rust.
+
+**Key Features:**
+• **Multi-threaded scheduler:** Efficient work-stealing
+• **I/O primitives:** TCP, UDP, Unix sockets, timers
+• **Sync primitives:** Async mutexes, channels, semaphores
+• **Utilities:** Timeouts, intervals, file system operations
+
+**Common Patterns:**
+
+**Channel Communication:**
+```rust
+use tokio::sync::mpsc;
+
+#[tokio::main]
+async fn main() {
+    let (tx, mut rx) = mpsc::channel(100);
+    
+    // Spawn producer
+    tokio::spawn(async move {
+        for i in 0..10 {
+            tx.send(i).await.unwrap();
+        }
+    });
+    
+    // Consumer
+    while let Some(value) = rx.recv().await {
+        println!("Received: {}", value);
+    }
+}
+```
+
+**HTTP Server with Axum:**
+```rust
+use axum::{extract::Query, response::Json, routing::get, Router};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+#[derive(Deserialize)]
+struct Params {
+    name: Option<String>,
+}
+
+#[derive(Serialize)]
+struct Response {
+    message: String,
+}
+
+async fn handler(Query(params): Query<Params>) -> Json<Response> {
+    let name = params.name.unwrap_or_else(|| "World".to_string());
+    Json(Response {
+        message: format!("Hello, {}!", name),
+    })
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new().route("/", get(handler));
+    
+    axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}
+```
+
+**Best Practices:**
+• Use `#[tokio::main]` for async main functions
+• Prefer `tokio::spawn` for CPU-intensive tasks
+• Use channels for inter-task communication  
+• Be careful with `std::sync` primitives in async contexts
+• Use `timeout` to prevent hanging operations
+
+**Performance Tips:**
+• Use `tokio::task::yield_now()` for cooperative yielding
+• Consider `rayon` for CPU-bound parallel work
+• Profile with `tokio-console` for debugging async issues"""
         
         if 'cargo' in prompt_lower or 'crate' in prompt_lower:
-            return self._generate_rust_ecosystem_expertise()
+            return """**Rust Ecosystem & Cargo - Expert Guide:**
+
+**Cargo: Rust's Superpower**
+Cargo is Rust's built-in package manager and build system, making dependency management seamless.
+
+**Key Features:**
+• **Package Management:** Dependencies declared in `Cargo.toml`
+• **Build System:** Compilation, testing, and documentation
+• **Workspaces:** Multi-package projects
+• **Publishing:** Easy crate publishing to crates.io
+
+**Essential Cargo Commands:**
+```bash
+# Create new project
+cargo new my_project
+cargo new --lib my_library
+
+# Build and run
+cargo build          # Debug build
+cargo build --release  # Optimized build
+cargo run            # Build and run
+
+# Testing and documentation  
+cargo test           # Run tests
+cargo doc --open     # Generate and open docs
+cargo check          # Fast compile check
+
+# Dependencies
+cargo add serde      # Add dependency (Cargo 1.60+)
+cargo update         # Update dependencies
+```
+
+**Popular Crates Ecosystem:**
+
+**Serialization:**
+• **serde** - Serialization framework (JSON, YAML, etc.)
+• **serde_json** - JSON support for serde
+
+**Web Development:**
+• **actix-web** - High-performance web framework
+• **warp** - Composable web framework
+• **tokio** - Async runtime
+
+**Command Line:**
+• **clap** - Command line argument parsing
+• **structopt** - Derive-based CLI
+
+**Error Handling:**
+• **anyhow** - Flexible error handling
+• **thiserror** - Custom error types
+
+**Example Cargo.toml:**
+```toml
+[package]
+name = "my_app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+clap = { version = "4.0", features = ["derive"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+```
+
+**Best Practices:**
+• Pin major versions for stability
+• Use `cargo clippy` for linting  
+• Use `cargo fmt` for formatting
+• Enable useful features selectively
+• Consider using `cargo-edit` for dependency management"""
         
         # General Rust expertise
         return """**Rust Programming Language - Expert Overview:**
@@ -962,10 +1505,198 @@ async function robustFetch(url) {
 Modern JavaScript async programming is powerful and elegant when done right."""
         
         if 'react' in prompt_lower or 'vue' in prompt_lower or 'angular' in prompt_lower:
-            return self._generate_frontend_framework_expertise(prompt_lower)
+            if 'react' in prompt_lower:
+                return """**React - Modern Frontend Framework Expert Guide:**
+
+**Why React Dominates:**
+React revolutionized frontend development with component-based architecture and virtual DOM.
+
+**Core Concepts:**
+
+**Modern React (Hooks Era):**
+```javascript
+import React, { useState, useEffect } from 'react';
+
+function UserProfile({ userId }) {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchUser() {
+            try {
+                const response = await fetch(`/api/users/${userId}`);
+                const userData = await response.json();
+                setUser(userData);
+            } catch (error) {
+                console.error('Failed to fetch user:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        fetchUser();
+    }, [userId]);
+
+    if (loading) return <div>Loading...</div>;
+    
+    return (
+        <div className="user-profile">
+            <h1>{user?.name}</h1>
+            <p>{user?.email}</p>
+        </div>
+    );
+}
+```
+
+**Advanced Patterns:**
+• **Custom Hooks:** Reusable stateful logic
+• **Context API:** Global state management
+• **React Query:** Server state management
+• **Suspense:** Better loading states
+
+**Modern Stack:**
+• **Next.js:** Full-stack React framework
+• **Vite:** Lightning-fast dev server
+• **TypeScript:** Type safety for large apps
+• **Tailwind CSS:** Utility-first styling"""
+            elif 'vue' in prompt_lower:
+                return """**Vue.js - Progressive Frontend Framework:**
+
+**Vue's Philosophy:** Incrementally adoptable, approachable, and versatile.
+
+**Modern Vue 3 with Composition API:**
+```javascript
+<template>
+  <div class="user-profile">
+    <h1 v-if="loading">Loading...</h1>
+    <div v-else>
+      <h1>{{ user.name }}</h1>
+      <p>{{ user.email }}</p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+
+const user = ref(null);
+const loading = ref(true);
+
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/user');
+    user.value = await response.json();
+  } finally {
+    loading.value = false;
+  }
+});
+</script>
+```
+
+**Vue Ecosystem:**
+• **Nuxt.js:** Full-stack Vue framework
+• **Pinia:** Modern state management
+• **Vue Router:** Official routing
+• **Vite:** Build tool"""
+            else:  # Angular
+                return """**Angular - Enterprise Frontend Framework:**
+
+**Angular's Strength:** Full-featured, opinionated framework for large-scale applications.
+
+**Modern Angular (v15+):**
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { UserService } from './user.service';
+
+@Component({
+  selector: 'app-user-profile',
+  template: `
+    <div class="user-profile">
+      <h1 *ngIf="loading">Loading...</h1>
+      <div *ngIf="!loading">
+        <h1>{{ user?.name }}</h1>
+        <p>{{ user?.email }}</p>
+      </div>
+    </div>
+  `
+})
+export class UserProfileComponent implements OnInit {
+  user: any = null;
+  loading = true;
+
+  constructor(private userService: UserService) {}
+
+  ngOnInit() {
+    this.userService.getUser().subscribe({
+      next: (user) => this.user = user,
+      error: (err) => console.error(err),
+      complete: () => this.loading = false
+    });
+  }
+}
+```
+
+**Angular Features:**
+• **TypeScript by Default:** Strong typing
+• **Dependency Injection:** Powerful DI system
+• **RxJS:** Reactive programming
+• **Angular CLI:** Comprehensive tooling"""
         
         if 'node' in prompt_lower or 'backend' in prompt_lower:
-            return self._generate_nodejs_expertise()
+            return """**Node.js - Server-Side JavaScript Expert Guide:**
+
+**Why Node.js is Powerful:**
+Node.js brings JavaScript to the server with high performance through V8 engine and event-driven, non-blocking I/O.
+
+**Core Strengths:**
+• **Single Language Stack:** JavaScript everywhere (frontend + backend)
+• **NPM Ecosystem:** Largest package repository in the world
+• **Event-Driven Architecture:** Perfect for I/O-intensive applications
+• **Microservices:** Lightweight, fast startup times
+
+**Modern Node.js Development:**
+
+**Express.js (Most Popular Framework):**
+```javascript
+const express = require('express');
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(express.static('public'));
+
+// Routes
+app.get('/api/users', async (req, res) => {
+    try {
+        const users = await User.findAll();
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.listen(3000, () => {
+    console.log('Server running on port 3000');
+});
+```
+
+**Modern Alternatives:**
+• **Fastify:** 2x faster than Express
+• **Koa.js:** From Express team, modern async/await
+• **NestJS:** Enterprise-grade with TypeScript
+
+**Best Practices:**
+• Use TypeScript for large applications
+• Implement proper error handling with try/catch
+• Use environment variables for configuration
+• Implement rate limiting and security middleware
+• Use clustering for production (PM2)
+
+**Performance Tips:**
+• Use HTTP/2 for better performance
+• Implement caching strategies (Redis)
+• Use connection pooling for databases
+• Monitor with APM tools (New Relic, DataDog)"""
         
         return """**JavaScript - Modern Language Overview:**
 
