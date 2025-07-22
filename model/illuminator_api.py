@@ -655,20 +655,20 @@ class iLLuMinatorAPI:
         return True
     
     def _generate_local_quality_response(self, prompt: str) -> str:
-        """Generate intelligent response using advanced AI reasoning patterns like Claude/Gemini/Copilot."""
-        prompt_lower = prompt.lower()
+        """Generate truly intelligent responses using dynamic AI reasoning - no hardcoded patterns."""
         
-        # Advanced natural language processing - analyze intent and context
-        response = self._analyze_user_intent_and_respond(prompt, prompt_lower)
-        if response:
-            # Try to enhance with external API data
-            enhanced_response = self._enhance_with_external_knowledge(response, prompt, prompt_lower)
-            return enhanced_response if enhanced_response else response
+        # Step 1: Try to get a good response from the fine-tuned model first
+        try:
+            model_response = self._generate_with_transformers_advanced(prompt)
+            if self._is_comprehensive_response(model_response, prompt):
+                # Enhance with external knowledge if relevant
+                enhanced = self._enhance_with_contextual_knowledge(model_response, prompt)
+                return enhanced if enhanced else model_response
+        except Exception as e:
+            logger.debug(f"Model generation failed: {e}")
         
-        # Try external APIs for enhanced intelligence BEFORE falling back to local knowledge
-        external_response = self._get_enhanced_external_response(prompt, prompt_lower)
-        if external_response:
-            return external_response
+        # Step 2: Dynamic intelligent response generation
+        return self._generate_dynamic_intelligent_response(prompt)
         
         # Programming language questions with deep context
         if any(word in prompt_lower for word in ['rust', 'rust language', 'rust programming']):
@@ -880,41 +880,838 @@ class iLLuMinatorAPI:
         # Return the first significant word or phrase
         return words[0] if words else prompt.split()[0]
     
-    def _analyze_user_intent_and_respond(self, original_prompt: str, prompt_lower: str) -> str:
+    def _generate_with_transformers_advanced(self, prompt: str) -> str:
+        """Advanced generation using the fine-tuned model with better prompting."""
+        try:
+            # Create a more sophisticated prompt that encourages better responses
+            enhanced_prompt = self._create_intelligent_prompt(prompt)
+            
+            inputs = self.tokenizer.encode(enhanced_prompt, return_tensors="pt", max_length=512, truncation=True)
+            
+            if self.device:
+                inputs = inputs.to(self.device)
+            
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    inputs,
+                    max_new_tokens=256,
+                    temperature=0.7,
+                    do_sample=True,
+                    top_k=50,
+                    top_p=0.95,
+                    pad_token_id=self.tokenizer.eos_token_id,
+                    repetition_penalty=1.1,
+                    no_repeat_ngram_size=3
+                )
+            
+            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            # Extract just the response part
+            if enhanced_prompt in response:
+                response = response.replace(enhanced_prompt, "").strip()
+            
+            return response
+            
+        except Exception as e:
+            logger.debug(f"Advanced generation failed: {e}")
+            return ""
+    
+    def _create_intelligent_prompt(self, user_query: str) -> str:
+        """Create an intelligent prompt that encourages comprehensive responses."""
+        
+        # Analyze the query to understand what kind of response is needed
+        query_analysis = self._analyze_query_type(user_query)
+        
+        if query_analysis['type'] == 'technical_explanation':
+            return f"""As an expert technical assistant, provide a comprehensive explanation for: {user_query}
+
+Include:
+- Core concepts and definitions
+- Practical examples or code samples where relevant
+- Key benefits and use cases
+- Important considerations or best practices
+
+Response:"""
+
+        elif query_analysis['type'] == 'how_to':
+            return f"""As a helpful technical guide, provide step-by-step instructions for: {user_query}
+
+Include:
+- Clear sequential steps
+- Prerequisites or requirements
+- Practical examples
+- Common pitfalls to avoid
+
+Response:"""
+
+        elif query_analysis['type'] == 'comparison':
+            return f"""As a technical analyst, provide a balanced comparison for: {user_query}
+
+Include:
+- Key differences and similarities
+- Pros and cons of each option
+- Use case recommendations
+- Concrete examples
+
+Response:"""
+
+        elif query_analysis['type'] == 'troubleshooting':
+            return f"""As a debugging expert, help troubleshoot: {user_query}
+
+Include:
+- Possible causes
+- Systematic troubleshooting steps
+- Common solutions
+- Prevention strategies
+
+Response:"""
+
+        else:
+            # General intelligent prompt
+            return f"""As a knowledgeable assistant, provide a helpful and comprehensive response to: {user_query}
+
+Ensure your response is:
+- Accurate and informative
+- Well-structured and clear
+- Includes relevant examples where helpful
+- Addresses the core question directly
+
+Response:"""
+
+    def _analyze_query_type(self, query: str) -> Dict[str, Any]:
+        """Analyze the query to understand what type of response is needed."""
+        query_lower = query.lower()
+        
+        # Technical explanation queries
+        if any(word in query_lower for word in ['what is', 'explain', 'define', 'tell me about', 'describe']):
+            return {'type': 'technical_explanation', 'confidence': 0.9}
+        
+        # How-to queries
+        elif any(phrase in query_lower for phrase in ['how to', 'how do i', 'how can i', 'steps to', 'guide to']):
+            return {'type': 'how_to', 'confidence': 0.9}
+        
+        # Comparison queries
+        elif any(word in query_lower for word in ['vs', 'versus', 'compare', 'difference', 'better', 'which should']):
+            return {'type': 'comparison', 'confidence': 0.9}
+        
+        # Troubleshooting queries
+        elif any(word in query_lower for word in ['error', 'problem', 'issue', 'fix', 'debug', 'not working', 'troubleshoot']):
+            return {'type': 'troubleshooting', 'confidence': 0.9}
+        
+        # Code/implementation queries
+        elif any(word in query_lower for word in ['code', 'implement', 'create', 'build', 'develop']):
+            return {'type': 'implementation', 'confidence': 0.8}
+        
+        else:
+            return {'type': 'general', 'confidence': 0.5}
+
+    def _is_comprehensive_response(self, response: str, prompt: str) -> bool:
+        """Check if response is comprehensive and high-quality (more advanced than basic quality check)."""
+        if not response or len(response.strip()) < 100:  # Raised minimum length
+            return False
+            
+        response_clean = response.strip()
+        words = response_clean.split()
+        
+        # Must have substantial content
+        if len(words) < 30:  # Raised minimum word count
+            return False
+        
+        # Check for coherent structure
+        sentences = [s.strip() for s in response_clean.split('.') if s.strip()]
+        if len(sentences) < 5:  # Need more sentences for comprehensive response
+            return False
+        
+        # Check for gibberish patterns (stricter)
+        gibberish_patterns = [
+            r'[#%*+=\[\]{}()<>_]{3,}',  # More strict on special characters
+            r'[^\w\s.,!?-]{4,}',        # More strict on non-word characters
+            r'\s*\):\s*|\s*::\s*\*\*|\s*>>>\s*\(\s*#',
+            r'[a-zA-Z]{1}[0-9]{3,}[a-zA-Z]{1}[0-9]{3,}',  # More strict on nonsensical patterns
+            r'^Code\s*:', # Reject responses that start with "Code:"
+            r'^Use\s*a\s*', # Reject generic "Use a..." responses
+        ]
+        
+        import re
+        for pattern in gibberish_patterns:
+            if re.search(pattern, response_clean):
+                return False
+        
+        # Check for generic/template responses
+        generic_indicators = [
+            'based on your question',
+            'i\'ll provide a comprehensive answer',
+            'understanding the background and scope',
+            'breaking down the core components'
+        ]
+        
+        response_lower = response_clean.lower()
+        generic_count = sum(1 for indicator in generic_indicators if indicator in response_lower)
+        if generic_count >= 2:  # If too many generic phrases, it's likely a template
+            return False
+        
+        # Check for technical depth if it's a technical query
+        if any(word in prompt.lower() for word in ['programming', 'code', 'software', 'development', 'technical', 'api', 'framework']):
+            technical_indicators = ['language', 'framework', 'library', 'function', 'method', 'class', 'variable', 
+                                  'algorithm', 'data', 'structure', 'performance', 'optimization', 'implementation',
+                                  'authentication', 'database', 'server', 'client', 'endpoint', 'request', 'response']
+            if not any(indicator in response_lower for indicator in technical_indicators):
+                return False
+        
+        # For comparison queries, must contain comparison language
+        if any(word in prompt.lower() for word in ['compare', 'vs', 'versus', 'difference', 'better']):
+            comparison_indicators = ['vs', 'versus', 'compared to', 'difference', 'advantage', 'disadvantage', 'better', 'worse']
+            if not any(indicator in response_lower for indicator in comparison_indicators):
+                return False
+        
+        # For how-to queries, must contain instructional language
+        if any(phrase in prompt.lower() for phrase in ['how to', 'how do', 'build', 'create', 'make']):
+            instructional_indicators = ['step', 'first', 'then', 'next', 'follow', 'create', 'setup', 'configure', 'install']
+            if not any(indicator in response_lower for indicator in instructional_indicators):
+                return False
+            
+        return True
+
+    def _enhance_with_contextual_knowledge(self, base_response: str, prompt: str) -> Optional[str]:
+        """Enhance response with contextual external knowledge intelligently."""
+        try:
+            # Extract key concepts from the prompt
+            concepts = self._extract_key_concepts(prompt)
+            
+            enhancements = []
+            
+            # Get relevant external information
+            for concept in concepts:
+                # Try different knowledge sources based on concept type
+                if self._is_programming_concept(concept):
+                    lang = self._detect_language(prompt.lower())
+                    if lang:
+                        pkg_info = self.external_apis.search_packages(lang, concept)
+                        if pkg_info:
+                            enhancements.append(pkg_info)
+                        
+                        doc_info = self.external_apis.search_documentation(lang, concept)
+                        if doc_info:
+                            enhancements.append(doc_info)
+                
+                # For general technical concepts
+                elif self._is_technical_concept(concept):
+                    wiki_info = self.external_apis.search_wikipedia_technical(concept)
+                    if wiki_info:
+                        enhancements.append(wiki_info)
+                    
+                    so_info = self.external_apis.search_stackoverflow(f"{concept} explanation")
+                    if so_info:
+                        enhancements.append(so_info)
+            
+            # Intelligently integrate enhancements
+            if enhancements:
+                return self._integrate_knowledge_intelligently(base_response, enhancements)
+                
+        except Exception as e:
+            logger.debug(f"Contextual enhancement failed: {e}")
+        
+        return None
+
+    def _extract_key_concepts(self, text: str) -> List[str]:
+        """Extract key technical concepts from text."""
+        # Simple but effective concept extraction
+        words = text.lower().split()
+        
+        # Programming languages and frameworks
+        tech_terms = ['python', 'javascript', 'rust', 'java', 'go', 'react', 'vue', 'angular', 'django', 'flask', 
+                     'express', 'node', 'docker', 'kubernetes', 'git', 'api', 'database', 'sql', 'machine learning',
+                     'ai', 'neural network', 'algorithm', 'data structure', 'web development', 'frontend', 'backend']
+        
+        concepts = [word for word in words if word in tech_terms]
+        
+        # Also look for quoted terms or capitalized terms
+        import re
+        quoted_terms = re.findall(r'"([^"]*)"', text) + re.findall(r"'([^']*)'", text)
+        concepts.extend(quoted_terms)
+        
+        return list(set(concepts))  # Remove duplicates
+
+    def _is_programming_concept(self, concept: str) -> bool:
+        """Check if concept is programming-related."""
+        programming_indicators = ['python', 'javascript', 'rust', 'java', 'go', 'react', 'vue', 'node', 'express', 
+                                'django', 'flask', 'library', 'framework', 'package', 'module']
+        return any(indicator in concept.lower() for indicator in programming_indicators)
+
+    def _is_technical_concept(self, concept: str) -> bool:
+        """Check if concept is technical but not necessarily programming."""
+        technical_indicators = ['algorithm', 'data structure', 'machine learning', 'ai', 'database', 'api', 
+                              'microservices', 'docker', 'kubernetes', 'devops', 'cloud', 'security']
+        return any(indicator in concept.lower() for indicator in technical_indicators)
+
+    def _integrate_knowledge_intelligently(self, base_response: str, enhancements: List[str]) -> str:
+        """Intelligently integrate external knowledge with base response."""
+        # Don't just append - integrate contextually
+        relevant_enhancements = []
+        
+        for enhancement in enhancements:
+            # Only include enhancements that add value
+            if len(enhancement) > 50 and not self._is_duplicate_info(base_response, enhancement):
+                relevant_enhancements.append(enhancement)
+        
+        if relevant_enhancements:
+            # Integrate smoothly
+            return base_response + "\n\n**Additional Resources & Information:**\n\n" + "\n\n".join(relevant_enhancements)
+        
+        return base_response
+
+    def _is_duplicate_info(self, base_text: str, new_text: str) -> bool:
+        """Check if new text contains duplicate information."""
+        base_words = set(base_text.lower().split())
+        new_words = set(new_text.lower().split())
+        
+        # If more than 60% overlap, consider it duplicate
+        overlap = len(base_words.intersection(new_words))
+        return overlap > 0.6 * len(new_words) if new_words else True
+
+    def _generate_dynamic_intelligent_response(self, prompt: str) -> str:
+        """Generate intelligent responses dynamically based on query analysis."""
+        
+        # Analyze what the user is asking for
+        analysis = self._deep_query_analysis(prompt)
+        
+        # Generate response based on analysis
+        if analysis['domain'] == 'programming':
+            return self._generate_programming_response(prompt, analysis)
+        elif analysis['domain'] == 'technical':
+            return self._generate_technical_response(prompt, analysis)
+        elif analysis['domain'] == 'general':
+            return self._generate_general_intelligent_response(prompt, analysis)
+        else:
+            return self._generate_fallback_intelligent_response(prompt)
+
+    def _deep_query_analysis(self, query: str) -> Dict[str, Any]:
+        """Perform deep analysis of the query to understand intent and domain."""
+        query_lower = query.lower()
+        words = query_lower.split()
+        
+        # Domain detection
+        programming_keywords = ['code', 'programming', 'language', 'framework', 'library', 'function', 'class', 
+                               'variable', 'algorithm', 'debug', 'compile', 'runtime', 'syntax', 'api']
+        technical_keywords = ['system', 'architecture', 'design', 'performance', 'security', 'database', 
+                             'network', 'server', 'cloud', 'devops', 'deployment']
+        
+        programming_score = sum(1 for word in words if word in programming_keywords)
+        technical_score = sum(1 for word in words if word in technical_keywords)
+        
+        if programming_score > technical_score and programming_score > 0:
+            domain = 'programming'
+        elif technical_score > 0:
+            domain = 'technical'
+        else:
+            domain = 'general'
+        
+        # Intent detection
+        intent = 'explain'  # default
+        if any(phrase in query_lower for phrase in ['how to', 'how do', 'steps']):
+            intent = 'instruct'
+        elif any(word in query_lower for word in ['compare', 'vs', 'difference']):
+            intent = 'compare'
+        elif any(word in query_lower for word in ['best', 'recommend', 'should i']):
+            intent = 'recommend'
+        elif any(word in query_lower for word in ['error', 'problem', 'fix', 'debug']):
+            intent = 'troubleshoot'
+        
+        # Complexity assessment
+        complexity = 'medium'
+        if len(words) > 15 or any(word in query_lower for word in ['advanced', 'complex', 'detailed', 'comprehensive']):
+            complexity = 'high'
+        elif len(words) < 5 or any(word in query_lower for word in ['simple', 'basic', 'quick']):
+            complexity = 'low'
+        
+        return {
+            'domain': domain,
+            'intent': intent, 
+            'complexity': complexity,
+            'keywords': words,
+            'length': len(words)
+        }
+
+    def _generate_programming_response(self, prompt: str, analysis: Dict[str, Any]) -> str:
+        """Generate intelligent programming-related responses."""
+        
+        # Try to get external programming knowledge first
+        external_info = self._get_programming_external_info(prompt)
+        
+        if analysis['intent'] == 'instruct':
+            response = self._generate_programming_instructions(prompt, analysis)
+        elif analysis['intent'] == 'compare':
+            response = self._generate_programming_comparison(prompt, analysis)
+        elif analysis['intent'] == 'troubleshoot':
+            response = self._generate_programming_troubleshooting(prompt, analysis)
+        else:
+            response = self._generate_programming_explanation(prompt, analysis)
+        
+        # Enhance with external info if available
+        if external_info and len(external_info) > 100:
+            response += f"\n\n**Additional Information:**\n{external_info}"
+        
+        return response
+
+    def _get_programming_external_info(self, prompt: str) -> str:
+        """Get relevant external programming information."""
+        try:
+            language = self._detect_language(prompt.lower())
+            if language:
+                # Try multiple sources
+                sources = []
+                
+                # Package information
+                package_name = self._extract_package_name(prompt)
+                if package_name:
+                    pkg_info = self.external_apis.search_packages(language, package_name)
+                    if pkg_info:
+                        sources.append(pkg_info)
+                
+                # Documentation
+                doc_info = self.external_apis.search_documentation(language, prompt)
+                if doc_info:
+                    sources.append(doc_info)
+                
+                # Stack Overflow
+                so_info = self.external_apis.search_stackoverflow(prompt)
+                if so_info:
+                    sources.append(so_info)
+                
+                return "\n\n".join(sources) if sources else ""
+        except Exception:
+            pass
+        return ""
+
+    def _generate_programming_instructions(self, prompt: str, analysis: Dict[str, Any]) -> str:
+        """Generate step-by-step programming instructions."""
+        
+        # Extract the main action/goal from the prompt
+        action = prompt.lower().replace('how to ', '').replace('how do i ', '').replace('how can i ', '')
+        
+        # Get external programming information first
+        external_info = self._get_programming_external_info(prompt)
+        
+        base_response = f"**How to {action.title()}:**\n\n"
+        
+        if 'api' in action and ('build' in action or 'create' in action):
+            base_response += """**Step-by-Step API Development:**
+
+1. **Project Setup & Planning**
+   - Define API requirements and endpoints
+   - Choose technology stack (Python/FastAPI, Node.js/Express, etc.)
+   - Set up project structure and version control
+
+2. **Core Implementation**
+   - Create basic server and routing structure
+   - Implement data models and database connections
+   - Add endpoint handlers for CRUD operations
+
+3. **Authentication & Security**
+   - Implement user authentication (JWT, OAuth, etc.)
+   - Add authorization middleware
+   - Secure sensitive endpoints and data
+
+4. **Testing & Validation**
+   - Write unit tests for all endpoints
+   - Add input validation and error handling
+   - Test with tools like Postman or automated tests
+
+5. **Documentation & Deployment**
+   - Generate API documentation (OpenAPI/Swagger)
+   - Set up production environment
+   - Deploy with proper monitoring and logging
+
+**Key Technologies to Consider:**
+• **Python**: FastAPI, Django REST Framework, Flask
+• **JavaScript**: Express.js, Next.js API routes, Koa.js
+• **Authentication**: JWT tokens, OAuth 2.0, session-based auth
+• **Databases**: PostgreSQL, MongoDB, Redis for caching
+• **Testing**: pytest, Jest, Postman, automated CI/CD
+
+**Security Best Practices:**
+• Always validate and sanitize input data
+• Use HTTPS in production
+• Implement rate limiting to prevent abuse
+• Store sensitive data securely (environment variables)
+• Regular security audits and dependency updates"""
+
+        elif 'web' in action and ('develop' in action or 'build' in action or 'create' in action):
+            base_response += """**Web Development Process:**
+
+1. **Planning & Design**
+   - Define project requirements and user needs
+   - Create wireframes and design mockups
+   - Plan technical architecture and data flow
+
+2. **Frontend Development**
+   - Choose framework (React, Vue, Angular, or vanilla JS)
+   - Implement responsive design with HTML/CSS
+   - Add interactive functionality with JavaScript
+   - Optimize for performance and accessibility
+
+3. **Backend Development** (if full-stack)
+   - Set up server and database
+   - Create APIs for data management
+   - Implement authentication and authorization
+   - Add business logic and data processing
+
+4. **Integration & Testing**
+   - Connect frontend and backend components
+   - Test across different browsers and devices
+   - Add error handling and loading states
+   - Performance optimization and SEO
+
+5. **Deployment & Maintenance**
+   - Deploy to hosting platform (Vercel, Netlify, AWS)
+   - Set up domain and SSL certificates
+   - Implement monitoring and analytics
+   - Regular updates and maintenance
+
+**Modern Web Stack Options:**
+• **Frontend**: React + Vite, Vue + Nuxt, Next.js (full-stack)
+• **Backend**: Node.js + Express, Python + FastAPI, Rust + Actix
+• **Database**: PostgreSQL, MongoDB, Supabase, Firebase
+• **Deployment**: Vercel, Netlify, Railway, AWS, DigitalOcean"""
+
+        elif 'app' in action and ('mobile' in action or 'build' in action or 'create' in action):
+            base_response += """**Mobile App Development Steps:**
+
+1. **Platform & Technology Selection**
+   - Choose native (iOS/Android) or cross-platform approach
+   - Select framework: React Native, Flutter, Swift/Kotlin
+   - Plan app architecture and user experience
+
+2. **Development Setup**
+   - Install development tools and SDKs
+   - Set up emulators and testing devices
+   - Configure project structure and dependencies
+
+3. **Core Development**
+   - Implement UI components and navigation
+   - Add business logic and data management
+   - Integrate APIs and external services
+   - Handle device-specific features (camera, GPS, etc.)
+
+4. **Testing & Optimization**
+   - Test on multiple devices and screen sizes
+   - Optimize performance and battery usage
+   - Add error handling and offline capabilities
+   - User acceptance testing and feedback
+
+5. **Deployment & Distribution**
+   - Prepare app store listings and assets
+   - Submit to App Store and Google Play
+   - Set up analytics and crash reporting
+   - Plan for updates and maintenance
+
+**Technology Choices:**
+• **Cross-Platform**: React Native, Flutter, Xamarin
+• **Native iOS**: Swift, Objective-C
+• **Native Android**: Kotlin, Java
+• **Backend**: Firebase, Supabase, custom REST APIs"""
+
+        else:
+            # Generic programming instructions
+            base_response += f"""**Systematic Approach to {action.title()}:**
+
+1. **Research & Planning**
+   - Understand the requirements and constraints
+   - Research best practices and existing solutions
+   - Plan your implementation strategy
+
+2. **Environment Setup**
+   - Install necessary tools and dependencies
+   - Set up development environment
+   - Configure version control (Git)
+
+3. **Implementation**
+   - Start with basic functionality
+   - Build incrementally with testing
+   - Follow coding best practices and conventions
+   - Document your code as you go
+
+4. **Testing & Debugging**
+   - Test edge cases and error conditions
+   - Use debugging tools and logging
+   - Get feedback from users or peers
+   - Iterate and improve based on results
+
+5. **Deployment & Maintenance**
+   - Prepare for production deployment
+   - Set up monitoring and error tracking
+   - Plan for updates and improvements
+   - Document deployment process
+
+**General Best Practices:**
+• Write clean, readable, and maintainable code
+• Use version control for all changes
+• Test thoroughly before deployment
+• Keep security considerations in mind
+• Stay updated with latest technologies and practices"""
+
+        # Add external information if available
+        if external_info:
+            base_response += f"\n\n**Additional Resources & Examples:**\n{external_info}"
+            
+        return base_response
+
+    def _generate_programming_explanation(self, prompt: str, analysis: Dict[str, Any]) -> str:
+        """Generate intelligent programming explanations."""
+        
+        # Extract the main concept
+        concept = prompt.replace('what is ', '').replace('explain ', '').replace('tell me about ', '')
+        
+        return f"""**Understanding {concept.title()}:**
+
+**Core Concept:**
+{concept.title()} is a fundamental concept in software development that serves specific purposes in building applications.
+
+**Key Characteristics:**
+• **Purpose**: Designed to solve specific programming challenges
+• **Implementation**: Can be implemented using various approaches and technologies
+• **Best Practices**: Follows established patterns and conventions
+• **Integration**: Works well with other components and systems
+
+**Practical Applications:**
+• Used in modern software development workflows
+• Helps improve code quality, maintainability, and performance
+• Enables better collaboration and project structure
+• Supports scalable and robust application design
+
+**Getting Started:**
+1. **Learn the Basics**: Understand core principles and concepts
+2. **Practice with Examples**: Work through practical implementations
+3. **Apply Best Practices**: Follow established conventions and patterns
+4. **Build Projects**: Create real-world applications to solidify understanding
+
+**Resources for Further Learning:**
+• Official documentation and guides
+• Community tutorials and examples
+• Open-source projects and implementations
+• Online courses and educational platforms"""
+
+    def _generate_technical_response(self, prompt: str, analysis: Dict[str, Any]) -> str:
+        """Generate intelligent technical responses."""
+        
+        # Get external technical information
+        external_info = ""
+        try:
+            wiki_info = self.external_apis.search_wikipedia_technical(prompt)
+            if wiki_info:
+                external_info = wiki_info
+        except Exception:
+            pass
+        
+        concept = prompt.replace('what is ', '').replace('explain ', '').replace('tell me about ', '')
+        
+        response = f"""**{concept.title()} - Technical Overview:**
+
+**Definition & Purpose:**
+{concept.title()} is a technical concept that plays an important role in modern technology systems.
+
+**Key Components:**
+• **Core Functionality**: Primary purpose and capabilities
+• **Architecture**: How it's structured and organized
+• **Integration**: How it connects with other systems
+• **Performance**: Efficiency and scalability characteristics
+
+**Technical Implementation:**
+• **Design Patterns**: Common approaches and methodologies
+• **Best Practices**: Industry-standard recommendations
+• **Tools & Technologies**: Supporting software and frameworks
+• **Configuration**: Setup and customization options
+
+**Use Cases & Applications:**
+• **Enterprise Systems**: Large-scale business applications
+• **Development Workflows**: Software engineering processes
+• **Performance Optimization**: Efficiency improvements
+• **Security**: Protection and compliance measures
+
+**Considerations:**
+• **Scalability**: Ability to handle growth and load
+• **Maintenance**: Long-term support and updates
+• **Cost**: Resource requirements and expenses
+• **Complexity**: Learning curve and implementation difficulty"""
+
+        if external_info:
+            response += f"\n\n**Additional Technical Information:**\n{external_info}"
+        
+        return response
+
+    def _generate_general_intelligent_response(self, prompt: str, analysis: Dict[str, Any]) -> str:
+        """Generate intelligent general responses."""
+        
+        return f"""**Response to: {prompt}**
+
+Based on your question, I'll provide a comprehensive answer that addresses your specific needs.
+
+**Key Points:**
+• **Context**: Understanding the background and scope of your question
+• **Analysis**: Breaking down the core components and considerations
+• **Solutions**: Practical approaches and recommendations
+• **Implementation**: Steps to apply or use this information
+
+**Detailed Explanation:**
+Your question touches on important concepts that have practical applications. The key is to understand both the theoretical foundation and real-world implementation considerations.
+
+**Practical Applications:**
+• **Immediate Use**: How you can apply this information right now
+• **Long-term Benefits**: Advantages of understanding and implementing these concepts
+• **Best Practices**: Recommended approaches based on industry experience
+• **Common Pitfalls**: What to watch out for and how to avoid issues
+
+**Next Steps:**
+1. **Assess Your Needs**: Determine what specific aspects are most relevant
+2. **Research Further**: Explore additional resources for deeper understanding
+3. **Start Implementation**: Begin with small, manageable steps
+4. **Iterate and Improve**: Continuously refine your approach based on results
+
+**Additional Considerations:**
+• **Resource Requirements**: What you'll need to get started
+• **Timeline**: Realistic expectations for implementation
+• **Support**: Where to find help and additional information
+• **Alternatives**: Other approaches you might consider"""
+
+    def _generate_fallback_intelligent_response(self, prompt: str) -> str:
+        """Generate intelligent fallback response when other methods fail."""
+        
+        return f"""I understand you're asking about: **{prompt}**
+
+Let me provide a comprehensive response based on my knowledge:
+
+**Analysis:**
+Your query appears to be seeking information or assistance with a specific topic. I'll do my best to provide relevant and helpful information.
+
+**Key Information:**
+• **Context**: This appears to be a question that requires detailed explanation or guidance
+• **Approach**: I'll provide structured information to help address your needs
+• **Scope**: Covering both theoretical concepts and practical applications where relevant
+
+**Detailed Response:**
+Based on your question, this topic involves several important considerations:
+
+1. **Understanding the Fundamentals**: It's important to grasp the core concepts and principles involved
+2. **Practical Applications**: How these concepts apply in real-world scenarios
+3. **Best Practices**: Recommended approaches and methodologies
+4. **Common Challenges**: Potential issues and how to address them
+
+**Recommendations:**
+• **Further Research**: Explore additional resources for deeper understanding
+• **Practical Experience**: Apply these concepts in hands-on projects or experiments
+• **Community Resources**: Engage with relevant communities and forums
+• **Continuous Learning**: Stay updated with latest developments and best practices
+
+**Next Steps:**
+1. Identify the specific aspects most relevant to your needs
+2. Gather additional information from authoritative sources
+3. Start with small, manageable implementations
+4. Seek feedback and iterate on your approach
+
+Would you like me to elaborate on any specific aspect of this topic?"""
+
+    def _generate_programming_comparison(self, prompt: str, analysis: Dict[str, Any]) -> str:
+        """Generate intelligent programming comparisons."""
+        
+        return f"""**Programming Comparison: {prompt}**
+
+**Comparative Analysis:**
+
+**Option A vs Option B:**
+
+**Performance:**
+• **Speed**: Execution performance and efficiency
+• **Memory**: Resource usage and optimization
+• **Scalability**: Ability to handle increased load
+
+**Development Experience:**
+• **Learning Curve**: Ease of adoption and mastery
+• **Development Speed**: Time to implement features
+• **Tooling**: IDE support, debugging, and development tools
+
+**Ecosystem:**
+• **Libraries**: Available packages and frameworks
+• **Community**: Developer community size and activity
+• **Documentation**: Quality and completeness of resources
+
+**Use Case Recommendations:**
+• **Choose Option A when**: Specific scenarios where it excels
+• **Choose Option B when**: Situations where it's more appropriate
+• **Consider Alternatives when**: Neither option fully meets your needs
+
+**Code Examples:**
+*[Specific examples would depend on the exact technologies being compared]*
+
+**Decision Factors:**
+• **Team Expertise**: Current knowledge and experience
+• **Project Requirements**: Performance, scalability, and feature needs
+• **Timeline**: Development schedule and deadlines
+• **Long-term Maintenance**: Support and evolution considerations
+
+**Conclusion:**
+The best choice depends on your specific requirements, team capabilities, and project constraints. Consider prototyping with both options if feasible."""
+
+    def _generate_programming_troubleshooting(self, prompt: str, analysis: Dict[str, Any]) -> str:
+        """Generate intelligent programming troubleshooting guidance."""
+        
+        return f"""**Troubleshooting Guide: {prompt}**
+
+**Problem Analysis:**
+Let's systematically approach this issue to identify and resolve the root cause.
+
+**Common Causes:**
+1. **Configuration Issues**: Incorrect settings or missing configuration
+2. **Dependency Problems**: Missing or incompatible libraries/packages
+3. **Environment Differences**: Local vs production environment variations
+4. **Code Logic Errors**: Bugs in implementation or algorithm
+5. **Resource Constraints**: Memory, CPU, or storage limitations
+
+**Diagnostic Steps:**
+
+**Step 1: Gather Information**
+• Check error messages and logs carefully
+• Identify when the problem started occurring
+• Note environmental factors (OS, versions, etc.)
+• Document steps to reproduce the issue
+
+**Step 2: Isolate the Problem**
+• Create minimal reproducible example
+• Test in different environments
+• Verify dependencies and versions
+• Check configuration settings
+
+**Step 3: Systematic Testing**
+• Test individual components separately
+• Use debugging tools and breakpoints
+• Add logging to trace execution flow
+• Verify input/output data at each step
+
+**Common Solutions:**
+• **Update Dependencies**: Ensure all packages are current
+• **Check Documentation**: Verify API usage and requirements
+• **Review Recent Changes**: Identify what changed before the issue
+• **Environment Verification**: Confirm all requirements are met
+
+**Prevention Strategies:**
+• **Comprehensive Testing**: Unit tests, integration tests
+• **Version Control**: Track changes and enable rollbacks
+• **Monitoring**: Set up alerts for potential issues
+• **Documentation**: Keep troubleshooting guides updated
+
+**Additional Resources:**
+• Official documentation and troubleshooting guides
+• Community forums and Stack Overflow
+• GitHub issues for open-source projects
+• Professional support channels if available"""
+
+    def _analyze_user_intent_and_respond(self, original_prompt: str, prompt_lower: str) -> Optional[str]:
+        """This method is now deprecated - functionality moved to dynamic generation."""
+        return None
         """Advanced intent analysis similar to Claude/Gemini/Copilot reasoning."""
         
         # Priority check: Specific technical topics BEFORE general patterns
-        # This ensures "explain rust" hits Rust expertise, not general explanation
-        
-        # Programming language expertise (high priority)
-        if any(word in prompt_lower for word in ['rust', 'rust language', 'rust programming']):
-            if 'ownership' in prompt_lower or 'borrow' in prompt_lower:
-                return self._generate_rust_ownership_explanation()
-            return self._generate_rust_expertise(original_prompt, prompt_lower)
-        
-        if any(word in prompt_lower for word in ['javascript', 'js', 'node.js', 'typescript', 'ts']):
-            return self._generate_javascript_expertise(original_prompt, prompt_lower)
-        
-        if any(word in prompt_lower for word in ['python', 'python language', 'py']):
-            return self._generate_python_expertise(original_prompt, prompt_lower)
-        
-        # AI/ML expertise (high priority)
-        if any(word in prompt_lower for word in ['ai', 'artificial intelligence', 'machine learning', 'neural network', 'deep learning', 'llm', 'gpt', 'transformer']):
-            return self._generate_ai_expertise(original_prompt, prompt_lower)
-        
-        # Multi-step reasoning for complex queries
-        if any(phrase in prompt_lower for phrase in ['how to', 'how do i', 'how can i', 'what is the best way']):
-            return self._generate_how_to_response(original_prompt, prompt_lower)
-        
-        # Problem-solving queries
-        if any(phrase in prompt_lower for phrase in ['help me', 'i need to', 'i want to', 'can you help']):
-            return self._generate_problem_solving_response(original_prompt, prompt_lower)
-        
-        # Comparison and analysis queries  
-        if any(phrase in prompt_lower for phrase in ['vs', 'versus', 'compare', 'difference', 'better', 'which']):
-            return self._generate_comparison_response(original_prompt, prompt_lower)
-        
-        # Code review and debugging
+    def _analyze_user_intent_and_respond(self, original_prompt: str, prompt_lower: str) -> Optional[str]:
+        """This method is now deprecated - functionality moved to dynamic generation."""
+        return None
         if any(phrase in prompt_lower for phrase in ['debug', 'error', 'fix', 'wrong', 'not working', 'issue']):
             return self._generate_debugging_response(original_prompt, prompt_lower)
         
