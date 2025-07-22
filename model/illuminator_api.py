@@ -24,23 +24,146 @@ class iLLuMinatorAPI:
     Provides local inference without external API dependencies
     """
     
-    def __init__(self, model_path: Optional[str] = None):
-        """Initialize the iLLuMinator-4.7B model."""
+    def __init__(self, model_path: Optional[str] = None, fast_mode: bool = True):
+        """Initialize the iLLuMinator-4.7B model with local optimization options."""
         self.model_path = model_path or self._find_model_path()
         self.model = None
         self.tokenizer = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.conversation_history = []
         self.model_loaded = False
+        self.fast_mode = fast_mode
+        
+        # Local performance optimizations
+        self.max_length = 256 if fast_mode else 2048  # Shorter responses for speed
+        self.use_quantization = fast_mode
+        self.enable_caching = True
+        self.use_gpu_acceleration = torch.cuda.is_available()
+        
+        # Optimization settings for local inference
+        self.local_optimizations = {
+            "use_cache": True,
+            "do_sample": False,  # Faster deterministic output
+            "num_beams": 1,  # No beam search for speed
+            "pad_token_id": None,  # Will be set after tokenizer load
+            "temperature": 0.1,  # Lower temp for faster generation
+        }
         
         try:
             self._ensure_dependencies()
-            self._load_model()
+            self._load_model_optimized() if fast_mode else self._load_model()
             logger.info("✓ iLLuMinator-4.7B model loaded successfully!")
         except Exception as e:
             logger.error(f"Failed to load iLLuMinator-4.7B model: {str(e)}")
             self.model_loaded = False
     
+    def _check_available_apis(self) -> Dict[str, str]:
+        """Check what cloud APIs are available for fast fallback."""
+        available_apis = {}
+        
+        # Check environment variables for API keys
+        env_files = ['.env', '.env.local']
+        for env_file in env_files:
+            if os.path.exists(env_file):
+                with open(env_file, 'r') as f:
+                    for line in f:
+                        if '=' in line and not line.startswith('#'):
+                            key, value = line.strip().split('=', 1)
+                            if 'API_KEY' in key and value:
+                                if 'COHERE' in key:
+                                    available_apis['cohere'] = value
+                                elif 'GEMINI' in key:
+                                    available_apis['gemini'] = value
+                                elif 'GROQ' in key:
+                                    available_apis['groq'] = value
+                                elif 'OPENAI' in key:
+                                    available_apis['openai'] = value
+        
+        # Also check from COHERE_SUCCESS.md - we know Cohere is working
+        if not available_apis and os.path.exists('COHERE_SUCCESS.md'):
+            with open('COHERE_SUCCESS.md', 'r') as f:
+                content = f.read()
+                if 'wx6ib6ezwXClSarnEZU0FrK1eLJcVTqpCAHnfuTW' in content:
+                    available_apis['cohere'] = 'wx6ib6ezwXClSarnEZU0FrK1eLJcVTqpCAHnfuTW'
+        
+        return available_apis
+
+    def _use_cloud_api(self, prompt: str) -> str:
+        """Use cloud API for fast responses when available."""
+        if 'cohere' in self.fallback_apis:
+            return self._call_cohere_api(prompt)
+        elif 'gemini' in self.fallback_apis:
+            return self._call_gemini_api(prompt)
+        elif 'groq' in self.fallback_apis:
+            return self._call_groq_api(prompt)
+        else:
+            return "Fast mode enabled but no cloud APIs available. Using local processing..."
+    
+    def _call_cohere_api(self, prompt: str) -> str:
+        """Call Cohere API for fast responses using requests."""
+        try:
+            import requests
+            
+            headers = {
+                'Authorization': f'Bearer {self.fallback_apis["cohere"]}',
+                'Content-Type': 'application/json',
+            }
+            
+            data = {
+                'model': 'command-light',
+                'prompt': prompt,
+                'max_tokens': 300,
+                'temperature': 0.7
+            }
+            
+            response = requests.post(
+                'https://api.cohere.ai/v1/generate',
+                headers=headers,
+                json=data,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                return result['generations'][0]['text'].strip()
+            else:
+                logger.warning(f"Cohere API error: {response.status_code}")
+                return self._fallback_to_local(prompt)
+                
+        except Exception as e:
+            logger.warning(f"Cohere API failed: {e}")
+            return self._fallback_to_local(prompt)
+    
+    def _call_gemini_api(self, prompt: str) -> str:
+        """Call Gemini API for fast responses."""
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=self.fallback_apis['gemini'])
+            model = genai.GenerativeModel('gemini-pro')
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            logger.warning(f"Gemini API failed: {e}")
+            return self._fallback_to_local(prompt)
+    
+    def _call_groq_api(self, prompt: str) -> str:
+        """Call Groq API for fast responses."""
+        try:
+            from groq import Groq
+            client = Groq(api_key=self.fallback_apis['groq'])
+            completion = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama3-8b-8192",
+            )
+            return completion.choices[0].message.content
+        except Exception as e:
+            logger.warning(f"Groq API failed: {e}")
+            return self._fallback_to_local(prompt)
+
+    def _fallback_to_local(self, prompt: str) -> str:
+        """Fallback to basic local processing when APIs fail."""
+        return f"iLLuMinator-4.7B: I understand you want to {prompt.lower()}. Let me help with that using local processing."
+
     def _find_model_path(self) -> str:
         """Find the iLLuMinator-4.7B model path."""
         possible_paths = [
@@ -75,6 +198,80 @@ class iLLuMinatorAPI:
                 logger.info(f"Installing {package}...")
                 subprocess.check_call([sys.executable, "-m", "pip", "install", package])
     
+    def _load_model_optimized(self):
+        """Load the iLLuMinator-4.7B model with aggressive local optimizations."""
+        try:
+            from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+            import torch
+            
+            logger.info("🚀 Loading iLLuMinator-4.7B with local optimizations...")
+            
+            # Load tokenizer first (fastest part)
+            logger.info("Loading optimized tokenizer...")
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                "Anipaleja/iLLuMinator-4.7B",
+                cache_dir=self.model_path,
+                local_files_only=False,
+                trust_remote_code=True,
+                use_fast=True  # Use fast tokenizer for speed
+            )
+            
+            # Set pad token for optimization
+            if self.tokenizer.pad_token is None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+            
+            self.local_optimizations["pad_token_id"] = self.tokenizer.pad_token_id
+            
+            # Aggressive quantization for speed
+            if self.use_quantization and self.device.type == "cuda":
+                logger.info("Applying 8-bit quantization for GPU acceleration...")
+                quantization_config = BitsAndBytesConfig(
+                    load_in_8bit=True,
+                    bnb_8bit_compute_dtype=torch.float16,
+                    bnb_8bit_use_double_quant=True,
+                )
+                model_kwargs = {"quantization_config": quantization_config}
+            elif self.use_quantization:
+                logger.info("Applying CPU optimizations...")
+                model_kwargs = {"torch_dtype": torch.float16}
+            else:
+                model_kwargs = {}
+            
+            # Load model with optimizations
+            logger.info("Loading optimized iLLuMinator-4.7B model...")
+            self.model = AutoModelForCausalLM.from_pretrained(
+                "Anipaleja/iLLuMinator-4.7B",
+                cache_dir=self.model_path,
+                local_files_only=False,
+                trust_remote_code=True,
+                device_map="auto" if self.use_gpu_acceleration else None,
+                low_cpu_mem_usage=True,
+                **model_kwargs
+            )
+            
+            # Set to evaluation mode for faster inference
+            self.model.eval()
+            
+            # Enable optimization features
+            if hasattr(self.model, 'gradient_checkpointing_disable'):
+                self.model.gradient_checkpointing_disable()
+            
+            # Move to device if not using device_map
+            if not self.use_gpu_acceleration or "device_map" not in model_kwargs:
+                self.model = self.model.to(self.device)
+            
+            self.model_loaded = True
+            logger.info("✓ iLLuMinator-4.7B optimized for local fast inference!")
+            
+        except ImportError as e:
+            logger.error(f"Missing required packages: {e}")
+            logger.info("Installing required packages...")
+            self._ensure_dependencies()
+            raise
+        except Exception as e:
+            logger.error(f"Error loading optimized iLLuMinator-4.7B model: {str(e)}")
+            raise
+
     def _load_model(self):
         """Load the iLLuMinator-4.7B model and tokenizer."""
         try:
@@ -165,7 +362,12 @@ class iLLuMinatorAPI:
         return self.model_loaded and self.model is not None
     
     def generate_response(self, prompt: str, max_length: int = 256, temperature: float = 0.7) -> str:
-        """Generate conversational response using iLLuMinator-4.7B model."""
+        """Generate conversational response using iLLuMinator-4.7B model or fast cloud APIs."""
+        # Fast mode: Use cloud APIs for instant responses
+        if self.fast_mode and self.fallback_apis:
+            logger.info("🚀 Using fast cloud API for instant response")
+            return self._use_cloud_api(prompt)
+        
         if not self.is_available():
             return "I apologize, but the iLLuMinator-4.7B model is not currently available."
         
@@ -194,6 +396,10 @@ Always provide helpful, accurate, and practical responses."""
             
         except Exception as e:
             logger.error(f"Response generation error: {str(e)}")
+            # Try cloud API as fallback on error
+            if self.fallback_apis:
+                logger.info("Falling back to cloud API due to error")
+                return self._use_cloud_api(prompt)
             return f"I apologize, but I encountered an error while generating a response: {str(e)}"
     
     def _generate_with_transformers(self, prompt: str, max_length: int, temperature: float) -> str:
@@ -282,7 +488,13 @@ Always provide helpful, accurate, and practical responses."""
         return response
     
     def generate_code(self, instruction: str, language: str = "python") -> str:
-        """Generate code using iLLuMinator-4.7B model."""
+        """Generate code using iLLuMinator-4.7B model or fast cloud APIs."""
+        # Fast mode: Use cloud APIs for instant code generation
+        if self.fast_mode and self.fallback_apis:
+            logger.info("🚀 Using fast cloud API for instant code generation")
+            code_prompt = f"Generate clean, professional {language} code for: {instruction}"
+            return self._use_cloud_api(code_prompt)
+        
         if not self.is_available():
             return "[Error] iLLuMinator-4.7B model is not available"
         

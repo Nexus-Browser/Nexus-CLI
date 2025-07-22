@@ -27,18 +27,24 @@ class NexusModel:
     Provides advanced code generation and conversation using local processing
     """
     
-    def __init__(self, model_path: Optional[str] = None):
-        """Initialize the Nexus model with iLLuMinator-4.7B."""
+    def __init__(self, model_path: Optional[str] = None, fast_mode: bool = True):
+        """Initialize the Nexus model with iLLuMinator-4.7B in fast mode."""
         logger.info("Initializing Nexus model with iLLuMinator-4.7B...")
+        if fast_mode:
+            logger.info("🚀 Fast mode enabled - using cloud APIs for instant responses")
         
         try:
-            # Initialize the actual iLLuMinator-4.7B model
+            # Initialize the iLLuMinator-4.7B model with fast mode
             logger.info("Loading iLLuMinator-4.7B transformer model...")
-            self.llm = iLLuMinatorAPI(model_path)
+            self.llm = iLLuMinatorAPI(model_path, fast_mode=fast_mode)
+            self.fast_mode = fast_mode
             
-            if self.llm.is_available():
+            if self.llm.is_available() or (fast_mode and self.llm.fallback_apis):
                 self.model_available = True
-                logger.info("✓ iLLuMinator-4.7B model loaded successfully!")
+                if fast_mode and self.llm.fallback_apis:
+                    logger.info("✓ iLLuMinator-4.7B fast mode ready with cloud API fallback!")
+                else:
+                    logger.info("✓ iLLuMinator-4.7B model loaded successfully!")
             else:
                 self.model_available = False
                 logger.warning("iLLuMinator-4.7B model failed to load, using basic mode")
@@ -52,6 +58,7 @@ class NexusModel:
             self.llm = None
             self.model_available = False
             self.code_analyzer = CodeAnalyzer()
+            self.fast_mode = False
     
     def generate_code(self, instruction: str, language: str = "python") -> str:
         """Generate code using iLLuMinator-4.7B model."""
