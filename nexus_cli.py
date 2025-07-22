@@ -180,6 +180,11 @@ class IntelligentNexusCLI:
         help_text = """
 [bold]Available Commands:[/bold]
 
+[cyan]🌐 AI & Web Intelligence:[/cyan]
+  • [code]ask <question>[/code] - Ask any question with web-enhanced intelligence
+  • [code]search <query>[/code] - Direct web search with intelligent synthesis
+  • Just type any question naturally - I'll understand!
+
 [cyan]Code Generation:[/cyan]
   • [code]code <instruction>[/code] - Generate intelligent code from natural language
   • [code]code <language> <instruction>[/code] - Generate code in specific language
@@ -214,20 +219,21 @@ class IntelligentNexusCLI:
   • [code]exit[/code] - Exit Nexus CLI
   • [code]status[/code] - Check iLLuMinator API status
 
-[dim]Powered by iLLuMinator-4.7B - Local AI model from GitHub repository![/dim]
+[dim]🧠 Powered by iLLuMinator-4.7B with Web Intelligence![/dim]
+[dim]🌐 Now with comprehensive web search across Stack Overflow, GitHub, NPM, PyPI, Documentation, and more![/dim]
 [dim]Repository: https://github.com/Anipaleja/iLLuMinator-4.7B[/dim]
-[dim]Tip: I understand natural language! Try "create a function to add numbers" or "build a web server"[/dim]
-[dim]Smart Features: Context awareness, command suggestions, intelligent error handling[/dim]
+[dim]💡 Examples: "How to use React hooks?", "Python asyncio tutorial", "Best practices for Docker"[/dim]
+[dim]Smart Features: Web search integration, context awareness, command suggestions, intelligent error handling[/dim]
 """
         self.console.print(Panel(help_text, title="[bold]Nexus CLI Help[/bold]", border_style="cyan"))
     
     def get_command_suggestions(self, partial_input: str) -> List[str]:
         """Get intelligent command suggestions based on partial input."""
         commands = [
-            "code", "read", "write", "list", "tree", "analyze", 
+            "ask", "search", "code", "read", "write", "list", "tree", "analyze", 
             "functions", "classes", "run", "test", "install", 
             "chat", "history", "clear", "context", "clearcontext",
-            "help", "exit", "train"
+            "help", "exit", "status"
         ]
         
         suggestions = []
@@ -270,6 +276,8 @@ class IntelligentNexusCLI:
             
             # Handle specific commands with intelligent routing
             command_handlers = {
+                "ask": self._handle_ask_command,  # New web-enhanced question command
+                "search": self._handle_web_search,  # New web search command
                 "code": self._handle_code_generation,
                 "read": self._handle_read_file,
                 "write": self._handle_write_file,
@@ -935,21 +943,100 @@ class IntelligentNexusCLI:
         """Handle model training - show info about iLLuMinator-4.7B."""
         return "[yellow]iLLuMinator-4.7B is a pre-trained model from https://github.com/Anipaleja/iLLuMinator-4.7B. No additional training required![/yellow]"
     
+    def _handle_ask_command(self, args: List[str]) -> str:
+        """Handle direct ask command with web-enhanced intelligence."""
+        if not args:
+            return "[red]Please provide a question to ask.[/red]"
+        
+        if not self.model_available:
+            return "[red]iLLuMinator-4.7B model not available. Only basic commands are supported.[/red]"
+        
+        question = " ".join(args)
+        
+        try:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=self.console
+            ) as progress:
+                task = progress.add_task("🌐 Searching web and generating response...", total=None)
+                
+                # Use the enhanced iLLuMinator with web search
+                response = self.model.generate_response(question, max_length=512, temperature=0.7)
+                
+                progress.update(task, description="✓ Complete!")
+                time.sleep(0.2)
+            
+            # Clean and display response
+            response = self._clean_response(response)
+            
+            # Add to conversation history
+            self.conversation_history.append({"role": "user", "content": f"ask {question}"})
+            self.conversation_history.append({"role": "assistant", "content": response})
+            
+            return response
+            
+        except Exception as e:
+            return f"[red]Error processing question: {str(e)}[/red]"
+    
+    def _handle_web_search(self, args: List[str]) -> str:
+        """Handle direct web search command."""
+        if not args:
+            return "[red]Please provide a search query.[/red]"
+        
+        query = " ".join(args)
+        
+        try:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=self.console
+            ) as progress:
+                task = progress.add_task("🔍 Searching the web...", total=None)
+                
+                # Import and use the external knowledge APIs directly
+                from model.illuminator_api import ExternalKnowledgeAPIs
+                
+                external_apis = ExternalKnowledgeAPIs()
+                result = external_apis.search_web_comprehensive(query)
+                
+                progress.update(task, description="✓ Search complete!")
+                time.sleep(0.2)
+            
+            if result and len(result.strip()) > 20:
+                return result
+            else:
+                return f"[yellow]No comprehensive results found for '{query}'. Try rephrasing your search.[/yellow]"
+                
+        except Exception as e:
+            return f"[red]Error performing web search: {str(e)}[/red]"
+    
     def _handle_natural_language(self, user_input: str) -> str:
-        """Handle natural language input using the iLLuMinator-4.7B model."""
+        """Handle natural language input using the enhanced web-intelligent iLLuMinator model."""
         if not self.model_available:
             return "[red]iLLuMinator-4.7B model not available. Only basic commands are supported.[/red]"
         if not self.model:
             return "[red]iLLuMinator model not available. Please check the model installation.[/red]"
         
         try:
-            # Prepare context-enhanced prompt
-            context_prompt = self._prepare_context_enhanced_prompt(user_input)
+            # Show a spinner for web search (when applicable)
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=self.console
+            ) as progress:
+                task = progress.add_task("🧠 Processing with iLLuMinator...", total=None)
+                
+                # Prepare context-enhanced prompt
+                context_prompt = self._prepare_context_enhanced_prompt(user_input)
+                
+                # The enhanced iLLuMinator will automatically use web search when appropriate
+                response = self.model.generate_response(context_prompt, max_length=512, temperature=0.7)
+                
+                progress.update(task, description="✓ Response generated!")
+                time.sleep(0.2)  # Brief pause to show completion
             
-            # Generate response with context
-            response = self.model.generate_response(context_prompt, max_length=256, temperature=0.7)
-            
-            # Clean up the response to prevent repetitive text
+            # Clean up the response
             response = self._clean_response(response)
             
             # Add to conversation history
@@ -961,12 +1048,13 @@ class IntelligentNexusCLI:
                 self.memory.add_conversation(user_input, response)
             except Exception as mem_error:
                 # Memory error shouldn't break the chat
-                print(f"Warning: Memory error: {mem_error}")
+                self.console.print(f"[dim yellow]Note: Memory system unavailable[/dim yellow]")
             
             return response
             
         except Exception as e:
-            return f"[red]Error generating response: {str(e)}[/red]"
+            self.console.print(f"[red]Error generating response: {str(e)}[/red]")
+            return "[red]I encountered an error processing your request. Please try again.[/red]"
     
     def _prepare_context_enhanced_prompt(self, user_input: str) -> str:
         """Prepare a context-enhanced prompt with read files information."""

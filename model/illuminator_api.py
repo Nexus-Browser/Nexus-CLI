@@ -25,30 +25,392 @@ logger = logging.getLogger(__name__)
 
 class ExternalKnowledgeAPIs:
     """
-    Integration with external knowledge APIs to enhance CLI intelligence
-    Uses documentation, package registry, and code repository APIs
-    Now includes natural language developer question answering
+    Enhanced web intelligence system for Nexus CLI iLLuMinator integration
+    Provides comprehensive web search, documentation lookup, and intelligent response synthesis
     """
     
     def __init__(self):
         self.session = requests.Session()
-        self.session.timeout = 5  # Fast timeout for snappy responses
+        self.session.timeout = 5
         self.session.headers.update({
-            'User-Agent': 'Nexus-CLI/1.0 Enhanced Intelligence System'
+            'User-Agent': 'Mozilla/5.0 (Nexus-CLI/3.0) iLLuMinator Web Intelligence'
         })
         
-        # API endpoints for different knowledge sources
-        self.endpoints = {
-            'mdn': 'https://developer.mozilla.org/api/v1/search',
-            'devdocs': 'https://devdocs.io',
-            'stackoverflow': 'https://api.stackexchange.com/2.3/search/excerpts',
-            'github_search': 'https://api.github.com/search/code',
-            'npm_registry': 'https://registry.npmjs.org',
-            'pypi': 'https://pypi.org/pypi',
-            'crates_io': 'https://crates.io/api/v1/crates',
-            'go_modules': 'https://proxy.golang.org',
-            'wikipedia': 'https://en.wikipedia.org/api/rest_v1/page/summary'
+        # Result cache for performance
+        self.cache = {}
+        self.cache_ttl = 1800  # 30 minutes
+        
+        # Technology detection patterns
+        self.tech_patterns = {
+            'javascript': ['javascript', 'js', 'node', 'npm', 'react', 'vue', 'angular', 'typescript'],
+            'python': ['python', 'pip', 'django', 'flask', 'fastapi', 'pandas', 'numpy'],
+            'rust': ['rust', 'cargo', 'crate', 'rustc'],
+            'go': ['golang', 'go'],
+            'java': ['java', 'maven', 'gradle', 'spring'],
+            'cpp': ['c++', 'cpp', 'cmake'],
+            'web': ['html', 'css', 'dom', 'browser', 'frontend'],
+            'devops': ['docker', 'kubernetes', 'aws', 'deployment', 'ci/cd'],
+            'database': ['sql', 'mongodb', 'postgres', 'mysql', 'redis']
         }
+        
+        # API endpoints for comprehensive search
+        self.endpoints = {
+            'stackoverflow': 'https://api.stackexchange.com/2.3/search/advanced',
+            'github_repos': 'https://api.github.com/search/repositories',
+            'npm_registry': 'https://registry.npmjs.org/-/v1/search',
+            'pypi': 'https://pypi.org/pypi',
+            'wikipedia': 'https://en.wikipedia.org/api/rest_v1/page',
+            'duckduckgo': 'https://api.duckduckgo.com',
+            'crates_io': 'https://crates.io/api/v1/crates'
+        }
+    
+    def search_web_comprehensive(self, query: str) -> str:
+        """
+        Main entry point for comprehensive web search and intelligent response synthesis
+        Returns a direct, summarized answer instead of showing sources
+        """
+        try:
+            # Check cache first
+            cache_key = f"web_search_{hash(query)}"
+            if self._get_cached_result(cache_key):
+                return self._get_cached_result(cache_key)
+            
+            # Detect technologies mentioned in query
+            technologies = self._detect_technologies(query)
+            
+            # Perform multi-source search
+            search_results = self._multi_source_search(query, technologies)
+            
+            # Synthesize intelligent response
+            response = self._synthesize_intelligent_response(query, search_results, technologies)
+            
+            # Cache the response
+            self._cache_result(cache_key, response)
+            
+            return response
+            
+        except Exception as e:
+            logger.debug(f"Comprehensive web search failed: {e}")
+            return f"I encountered an issue searching for information about '{query}'. Could you try rephrasing your question?"
+    
+    def _detect_technologies(self, query: str) -> List[str]:
+        """Detect technologies mentioned in the query"""
+        query_lower = query.lower()
+        detected = []
+        
+        for tech, patterns in self.tech_patterns.items():
+            if any(pattern in query_lower for pattern in patterns):
+                detected.append(tech)
+        
+        return detected
+    
+    def _multi_source_search(self, query: str, technologies: List[str]) -> Dict[str, Any]:
+        """Perform search across multiple sources based on detected technologies"""
+        results = {
+            'stackoverflow': None,
+            'documentation': None,
+            'packages': None,
+            'general': None,
+            'github': None
+        }
+        
+        try:
+            # Stack Overflow for technical questions
+            if any(tech in ['javascript', 'python', 'rust', 'java', 'cpp'] for tech in technologies):
+                results['stackoverflow'] = self._search_stackoverflow_enhanced(query)
+            
+            # Package registries for library/framework queries
+            if 'javascript' in technologies:
+                results['packages'] = self._search_npm_enhanced(query)
+            elif 'python' in technologies:
+                results['packages'] = self._search_pypi_enhanced(query)
+            elif 'rust' in technologies:
+                results['packages'] = self._search_crates_enhanced(query)
+            
+            # GitHub for code examples
+            if technologies:
+                results['github'] = self._search_github_enhanced(query, technologies)
+            
+            # Documentation search
+            results['documentation'] = self._search_documentation_enhanced(query, technologies)
+            
+            # General web search for concepts
+            results['general'] = self._search_duckduckgo_enhanced(query)
+            
+        except Exception as e:
+            logger.debug(f"Multi-source search error: {e}")
+        
+        return results
+    
+    def _search_stackoverflow_enhanced(self, query: str) -> Optional[Dict]:
+        """Enhanced Stack Overflow search with better result processing"""
+        try:
+            params = {
+                'order': 'desc',
+                'sort': 'relevance',
+                'q': query,
+                'site': 'stackoverflow',
+                'pagesize': 3,
+                'filter': 'withbody'
+            }
+            
+            response = self.session.get(self.endpoints['stackoverflow'], params=params, timeout=5)
+            
+            if response.status_code == 200:
+                data = response.json()
+                items = data.get('items', [])
+                
+                if items:
+                    best_item = items[0]  # Get the most relevant result
+                    
+                    # Clean and extract useful information
+                    body = best_item.get('body_markdown', best_item.get('body', ''))
+                    # Remove HTML tags and limit length
+                    import re
+                    clean_body = re.sub(r'<[^>]+>', '', body)[:800]
+                    
+                    return {
+                        'title': best_item.get('title', ''),
+                        'content': clean_body,
+                        'score': best_item.get('score', 0),
+                        'accepted': bool(best_item.get('accepted_answer_id')),
+                        'tags': best_item.get('tags', [])
+                    }
+        except Exception as e:
+            logger.debug(f"Stack Overflow search failed: {e}")
+        return None
+    
+    def _search_npm_enhanced(self, query: str) -> Optional[Dict]:
+        """Enhanced NPM package search"""
+        try:
+            response = self.session.get(
+                f"{self.endpoints['npm_registry']}?text={quote(query)}&size=2",
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                objects = data.get('objects', [])
+                
+                if objects:
+                    pkg = objects[0].get('package', {})
+                    return {
+                        'name': pkg.get('name'),
+                        'description': pkg.get('description'),
+                        'version': pkg.get('version'),
+                        'keywords': pkg.get('keywords', [])
+                    }
+        except Exception as e:
+            logger.debug(f"NPM search failed: {e}")
+        return None
+    
+    def _search_pypi_enhanced(self, query: str) -> Optional[Dict]:
+        """Enhanced PyPI package search"""
+        try:
+            response = self.session.get(f"{self.endpoints['pypi']}/{query}/json", timeout=5)
+            
+            if response.status_code == 200:
+                data = response.json()
+                info = data.get('info', {})
+                return {
+                    'name': info.get('name'),
+                    'description': info.get('summary'),
+                    'version': info.get('version'),
+                    'author': info.get('author')
+                }
+        except Exception as e:
+            logger.debug(f"PyPI search failed: {e}")
+        return None
+    
+    def _search_crates_enhanced(self, query: str) -> Optional[Dict]:
+        """Enhanced Crates.io search for Rust packages"""
+        try:
+            response = self.session.get(
+                f"{self.endpoints['crates_io']}?q={quote(query)}&per_page=2",
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                crates = data.get('crates', [])
+                
+                if crates:
+                    crate = crates[0]
+                    return {
+                        'name': crate.get('name'),
+                        'description': crate.get('description'),
+                        'downloads': crate.get('downloads', 0)
+                    }
+        except Exception as e:
+            logger.debug(f"Crates.io search failed: {e}")
+        return None
+    
+    def _search_github_enhanced(self, query: str, technologies: List[str]) -> Optional[Dict]:
+        """Enhanced GitHub repository search"""
+        try:
+            github_token = os.getenv('GITHUB_TOKEN')
+            headers = {}
+            if github_token:
+                headers['Authorization'] = f'token {github_token}'
+            
+            response = self.session.get(
+                f"{self.endpoints['github_repos']}?q={quote(query)}&sort=stars&per_page=2",
+                headers=headers,
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                items = data.get('items', [])
+                
+                if items:
+                    repo = items[0]
+                    return {
+                        'name': repo.get('full_name'),
+                        'description': repo.get('description'),
+                        'language': repo.get('language'),
+                        'stars': repo.get('stargazers_count', 0)
+                    }
+        except Exception as e:
+            logger.debug(f"GitHub search failed: {e}")
+        return None
+    
+    def _search_documentation_enhanced(self, query: str, technologies: List[str]) -> Optional[Dict]:
+        """Search for official documentation based on detected technologies"""
+        doc_info = {
+            'javascript': {'name': 'MDN Web Docs', 'url': 'https://developer.mozilla.org/en-US/search?q='},
+            'python': {'name': 'Python Documentation', 'url': 'https://docs.python.org/3/search.html?q='},
+            'rust': {'name': 'Rust Documentation', 'url': 'https://doc.rust-lang.org/std/?search='},
+            'web': {'name': 'MDN Web Docs', 'url': 'https://developer.mozilla.org/en-US/search?q='}
+        }
+        
+        for tech in technologies:
+            if tech in doc_info:
+                return {
+                    'name': doc_info[tech]['name'],
+                    'url': doc_info[tech]['url'] + quote(query),
+                    'type': 'official_documentation'
+                }
+        
+        return None
+    
+    def _search_duckduckgo_enhanced(self, query: str) -> Optional[Dict]:
+        """Enhanced DuckDuckGo search for general information"""
+        try:
+            response = self.session.get(
+                f"{self.endpoints['duckduckgo']}/?q={quote(query)}&format=json&no_html=1&skip_disambig=1",
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Priority: Instant Answer > Abstract > Related Topics
+                if data.get('Answer'):
+                    return {
+                        'type': 'instant_answer',
+                        'content': data['Answer']
+                    }
+                elif data.get('Abstract'):
+                    return {
+                        'type': 'abstract',
+                        'content': data['Abstract'],
+                        'source': data.get('AbstractSource', '')
+                    }
+                elif data.get('RelatedTopics'):
+                    topics = data['RelatedTopics'][:2]
+                    if topics and isinstance(topics[0], dict):
+                        return {
+                            'type': 'related',
+                            'content': topics[0].get('Text', '')
+                        }
+        except Exception as e:
+            logger.debug(f"DuckDuckGo search failed: {e}")
+        return None
+    
+    def _synthesize_intelligent_response(self, query: str, results: Dict, technologies: List[str]) -> str:
+        """Synthesize an intelligent, direct response from search results"""
+        
+        # Start building the response
+        response_parts = []
+        
+        # 1. Check for instant answers first
+        if results.get('general') and results['general'].get('type') == 'instant_answer':
+            response_parts.append(results['general']['content'])
+        
+        # 2. Add Stack Overflow insights for technical questions
+        elif results.get('stackoverflow'):
+            so_result = results['stackoverflow']
+            if so_result.get('content'):
+                content = so_result['content'][:400]  # Limit length
+                response_parts.append(f"Based on community discussions: {content}")
+                
+                if so_result.get('accepted'):
+                    response_parts.append("This solution has been marked as accepted by the community.")
+        
+        # 3. Add package information if relevant
+        if results.get('packages'):
+            pkg = results['packages']
+            if pkg.get('name') and pkg.get('description'):
+                response_parts.append(f"\n**{pkg['name']}** is a popular library: {pkg['description']}")
+        
+        # 4. Add general information
+        if results.get('general') and results['general'].get('type') in ['abstract', 'related']:
+            general = results['general']
+            if general.get('content'):
+                response_parts.append(f"\n{general['content'][:300]}")
+        
+        # 5. Add GitHub repository info if relevant
+        if results.get('github'):
+            repo = results['github']
+            if repo.get('name') and repo.get('description'):
+                response_parts.append(f"\n**Popular Repository:** {repo['name']} - {repo['description']}")
+        
+        # 6. Technology-specific guidance
+        if technologies:
+            tech_guidance = self._get_technology_guidance(technologies, query)
+            if tech_guidance:
+                response_parts.append(f"\n**Technology Notes:** {tech_guidance}")
+        
+        # Combine and clean up the response
+        if response_parts:
+            final_response = "\n".join(response_parts)
+            # Clean up any HTML remnants and excessive whitespace
+            import re
+            final_response = re.sub(r'\s+', ' ', final_response)
+            final_response = re.sub(r'<[^>]+>', '', final_response)
+            return final_response.strip()
+        
+        # Fallback response
+        return f"I found some information about '{query}', but let me know if you need more specific details about any particular aspect."
+    
+    def _get_technology_guidance(self, technologies: List[str], query: str) -> str:
+        """Provide technology-specific guidance"""
+        guidance = {
+            'javascript': "For JavaScript, consider checking the latest ES6+ features and browser compatibility.",
+            'python': "Python offers excellent libraries for most tasks. Check the official docs for best practices.",
+            'rust': "Rust emphasizes memory safety and performance. The compiler messages are very helpful.",
+            'web': "Modern web development involves responsive design and accessibility considerations.",
+            'devops': "Focus on automation, monitoring, and infrastructure as code principles."
+        }
+        
+        for tech in technologies:
+            if tech in guidance:
+                return guidance[tech]
+        
+        return ""
+    
+    def _get_cached_result(self, key: str) -> Optional[str]:
+        """Get cached result if still valid"""
+        if key in self.cache:
+            result, timestamp = self.cache[key]
+            if time.time() - timestamp < self.cache_ttl:
+                return result
+        return None
+    
+    def _cache_result(self, key: str, result: str):
+        """Cache result with timestamp"""
+        self.cache[key] = (result, time.time())
         
         # Technology patterns for intelligent query routing
         self.tech_patterns = {
@@ -860,11 +1222,18 @@ class iLLuMinatorAPI:
         return self.model_loaded and self.model is not None
     
     def generate_response(self, prompt: str, max_length: int = 256, temperature: float = 0.7) -> str:
-        """Generate conversational response using locally optimized fine-tuned model with quality fallback."""
+        """Generate conversational response with enhanced web intelligence capabilities."""
         if not self.is_available():
             return "I apologize, but the local fine-tuned model is not currently available."
         
         try:
+            # Check if this is a question that would benefit from web search
+            if self._should_use_web_search(prompt):
+                # Try web-enhanced response first
+                web_response = self._generate_web_enhanced_response(prompt)
+                if web_response and len(web_response.strip()) > 50:
+                    return web_response
+            
             # First try the fine-tuned model
             conversation = f"Question: {prompt}\n\nAnswer:"
             
@@ -875,7 +1244,13 @@ class iLLuMinatorAPI:
                 if self._is_quality_response(response, prompt):
                     return response
                 
-                # If response is poor quality, use local rule-based fallback
+                # If response is poor quality, try web search as fallback
+                if self._should_use_web_search(prompt):
+                    web_response = self._generate_web_enhanced_response(prompt)
+                    if web_response and len(web_response.strip()) > 50:
+                        return web_response
+                
+                # Use local rule-based fallback
                 return self._generate_local_quality_response(prompt)
             else:
                 return self._generate_local_quality_response(prompt)
@@ -883,6 +1258,81 @@ class iLLuMinatorAPI:
         except Exception as e:
             logger.error(f"Response generation error: {str(e)}")
             return self._generate_local_quality_response(prompt)
+    
+    def _should_use_web_search(self, prompt: str) -> bool:
+        """Determine if a prompt would benefit from web search"""
+        prompt_lower = prompt.lower()
+        
+        # Keywords that indicate web search would be helpful
+        web_search_indicators = [
+            # Technical questions
+            'how to', 'how do', 'what is', 'what are', 'explain', 'tutorial',
+            'best practices', 'examples', 'guide', 'documentation',
+            
+            # Technology-specific
+            'javascript', 'python', 'rust', 'react', 'vue', 'angular',
+            'node', 'django', 'flask', 'fastapi', 'express',
+            'docker', 'kubernetes', 'aws', 'deployment',
+            'css', 'html', 'api', 'database', 'sql',
+            
+            # Learning and implementation
+            'learn', 'implement', 'install', 'setup', 'configure',
+            'error', 'problem', 'issue', 'debug', 'fix',
+            
+            # Current/latest information
+            'latest', 'current', 'new', 'recent', 'update',
+            'version', 'release', 'features'
+        ]
+        
+        # Check for question words and technical indicators
+        has_question_word = any(word in prompt_lower for word in ['how', 'what', 'why', 'when', 'where', 'which'])
+        has_tech_term = any(indicator in prompt_lower for indicator in web_search_indicators)
+        
+        return has_question_word or has_tech_term
+    
+    def _generate_web_enhanced_response(self, prompt: str) -> Optional[str]:
+        """Generate response enhanced with web search data"""
+        try:
+            # Use the external knowledge APIs for web search
+            external_apis = ExternalKnowledgeAPIs()
+            web_result = external_apis.search_web_comprehensive(prompt)
+            
+            if web_result and len(web_result.strip()) > 50:
+                # Format the response to be more conversational
+                formatted_response = self._format_web_response(web_result, prompt)
+                return formatted_response
+            
+        except Exception as e:
+            logger.debug(f"Web search failed: {e}")
+        
+        return None
+    
+    def _format_web_response(self, web_result: str, original_prompt: str) -> str:
+        """Format web search results into a conversational response"""
+        # Clean up the response and make it more natural
+        response = web_result.strip()
+        
+        # Add a natural introduction for certain types of questions
+        prompt_lower = original_prompt.lower()
+        
+        if prompt_lower.startswith(('what is', 'what are')):
+            # No need to add introduction for "what is" questions
+            pass
+        elif prompt_lower.startswith(('how to', 'how do', 'how can')):
+            if not response.lower().startswith('to '):
+                response = f"Here's how you can do that:\n\n{response}"
+        elif 'best practices' in prompt_lower:
+            if 'best practice' not in response.lower()[:100]:
+                response = f"Here are some best practices for this:\n\n{response}"
+        elif any(word in prompt_lower for word in ['tutorial', 'guide', 'learn']):
+            if not any(word in response.lower()[:100] for word in ['tutorial', 'guide', 'learn', 'here']):
+                response = f"Here's what you need to know:\n\n{response}"
+        
+        # Ensure the response ends properly
+        if not response.endswith(('.', '!', '?')):
+            response += "."
+        
+        return response
     
     def _is_quality_response(self, response: str, prompt: str) -> bool:
         """Check if the generated response is of good quality with balanced criteria."""
