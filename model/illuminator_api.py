@@ -3389,6 +3389,19 @@ spec:
         if any(word in instruction_lower for word in ['multiply', 'product', 'times']):
             return self._generate_math_code(instruction, language, 'multiplication')
         
+        # Games and interactive applications
+        if any(word in instruction_lower for word in ['tic tac toe', 'tictactoe', 'tic-tac-toe']):
+            return self._generate_game_code(language, 'tic_tac_toe')
+        
+        if any(phrase in instruction_lower for phrase in ['guessing game', 'guess number', 'number guessing', 'guess the number']) or ('guess' in instruction_lower and 'game' in instruction_lower):
+            return self._generate_game_code(language, 'guessing_game')
+        
+        if any(word in instruction_lower for word in ['rock paper scissors', 'rock-paper-scissors']):
+            return self._generate_game_code(language, 'rock_paper_scissors')
+        
+        if any(word in instruction_lower for word in ['hangman', 'word guessing']):
+            return self._generate_game_code(language, 'hangman')
+        
         # Data structures and algorithms
         if 'fibonacci' in instruction_lower:
             return self._generate_algorithm_code(language, 'fibonacci')
@@ -3687,6 +3700,166 @@ for (let i = 0; i < 10; i++) {
             }
             return templates.get(language, templates['python'])
         
+        elif algorithm == 'factorial':
+            templates = {
+                'python': '''# Python Factorial function
+def factorial_recursive(n):
+    """Calculate factorial using recursion."""
+    if n <= 1:
+        return 1
+    return n * factorial_recursive(n - 1)
+
+def factorial_iterative(n):
+    """Calculate factorial using iteration."""
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
+
+# Example usage
+for i in range(1, 11):
+    print(f"{i}! = {factorial_recursive(i)}")''',
+                
+                'javascript': '''// JavaScript Factorial function
+function factorialRecursive(n) {
+    if (n <= 1) return 1;
+    return n * factorialRecursive(n - 1);
+}
+
+function factorialIterative(n) {
+    let result = 1;
+    for (let i = 1; i <= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+
+// Example usage
+for (let i = 1; i <= 10; i++) {
+    console.log(`${i}! = ${factorialRecursive(i)}`);
+}'''
+            }
+            return templates.get(language, templates['python'])
+        
+        elif algorithm == 'sort':
+            templates = {
+                'python': '''# Python Sorting Algorithms
+def bubble_sort(arr):
+    """Bubble sort implementation."""
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+    return arr
+
+def quick_sort(arr):
+    """Quick sort implementation."""
+    if len(arr) <= 1:
+        return arr
+    
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    
+    return quick_sort(left) + middle + quick_sort(right)
+
+def merge_sort(arr):
+    """Merge sort implementation."""
+    if len(arr) <= 1:
+        return arr
+    
+    mid = len(arr) // 2
+    left = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    
+    return merge(left, right)
+
+def merge(left, right):
+    """Helper function for merge sort."""
+    result = []
+    i, j = 0, 0
+    
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    
+    result.extend(left[i:])
+    result.extend(right[j:])
+    return result
+
+# Example usage
+test_array = [64, 34, 25, 12, 22, 11, 90]
+print(f"Original array: {test_array}")
+print(f"Bubble sorted: {bubble_sort(test_array.copy())}")
+print(f"Quick sorted: {quick_sort(test_array.copy())}")
+print(f"Merge sorted: {merge_sort(test_array.copy())}")''',
+                
+                'javascript': '''// JavaScript Sorting Algorithms
+function bubbleSort(arr) {
+    const n = arr.length;
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+            }
+        }
+    }
+    return arr;
+}
+
+function quickSort(arr) {
+    if (arr.length <= 1) return arr;
+    
+    const pivot = arr[Math.floor(arr.length / 2)];
+    const left = arr.filter(x => x < pivot);
+    const middle = arr.filter(x => x === pivot);
+    const right = arr.filter(x => x > pivot);
+    
+    return [...quickSort(left), ...middle, ...quickSort(right)];
+}
+
+function mergeSort(arr) {
+    if (arr.length <= 1) return arr;
+    
+    const mid = Math.floor(arr.length / 2);
+    const left = mergeSort(arr.slice(0, mid));
+    const right = mergeSort(arr.slice(mid));
+    
+    return merge(left, right);
+}
+
+function merge(left, right) {
+    const result = [];
+    let i = 0, j = 0;
+    
+    while (i < left.length && j < right.length) {
+        if (left[i] <= right[j]) {
+            result.push(left[i]);
+            i++;
+        } else {
+            result.push(right[j]);
+            j++;
+        }
+    }
+    
+    return result.concat(left.slice(i)).concat(right.slice(j));
+}
+
+// Example usage
+const testArray = [64, 34, 25, 12, 22, 11, 90];
+console.log('Original array:', testArray);
+console.log('Bubble sorted:', bubbleSort([...testArray]));
+console.log('Quick sorted:', quickSort([...testArray]));
+console.log('Merge sorted:', mergeSort([...testArray]));'''
+            }
+            return templates.get(language, templates['python'])
+        
         return self._generate_generic_template(f"{algorithm} algorithm", language)
     
     def _generate_generic_template(self, instruction: str, language: str) -> str:
@@ -3744,6 +3917,521 @@ func main() {{
         }
         
         return templates.get(language, templates['python'])
+    
+    def _generate_game_code(self, language: str, game_type: str) -> str:
+        """Generate complete game implementations for any language."""
+        
+        if game_type == 'tic_tac_toe':
+            templates = {
+                'python': '''# Complete Tic-Tac-Toe Game in Python
+import os
+
+class TicTacToe:
+    def __init__(self):
+        self.board = [[' ' for _ in range(3)] for _ in range(3)]
+        self.current_player = 'X'
+    
+    def display_board(self):
+        """Display the current board state."""
+        os.system('clear' if os.name == 'posix' else 'cls')
+        print("\\n  Tic-Tac-Toe Game")
+        print("  ---------------")
+        print("     0   1   2")
+        for i in range(3):
+            print(f"  {i}  {self.board[i][0]} | {self.board[i][1]} | {self.board[i][2]}")
+            if i < 2:
+                print("    ---|---|---")
+        print()
+    
+    def make_move(self, row, col):
+        """Make a move on the board."""
+        if self.board[row][col] == ' ':
+            self.board[row][col] = self.current_player
+            return True
+        return False
+    
+    def check_winner(self):
+        """Check if there's a winner."""
+        # Check rows
+        for row in self.board:
+            if row[0] == row[1] == row[2] != ' ':
+                return row[0]
+        
+        # Check columns
+        for col in range(3):
+            if self.board[0][col] == self.board[1][col] == self.board[2][col] != ' ':
+                return self.board[0][col]
+        
+        # Check diagonals
+        if self.board[0][0] == self.board[1][1] == self.board[2][2] != ' ':
+            return self.board[0][0]
+        if self.board[0][2] == self.board[1][1] == self.board[2][0] != ' ':
+            return self.board[0][2]
+        
+        return None
+    
+    def is_board_full(self):
+        """Check if the board is full."""
+        for row in self.board:
+            for cell in row:
+                if cell == ' ':
+                    return False
+        return True
+    
+    def switch_player(self):
+        """Switch between X and O."""
+        self.current_player = 'O' if self.current_player == 'X' else 'X'
+    
+    def play(self):
+        """Main game loop."""
+        print("Welcome to Tic-Tac-Toe!")
+        print("Players will take turns. Enter row and column (0-2) to make a move.")
+        
+        while True:
+            self.display_board()
+            print(f"Player {self.current_player}'s turn")
+            
+            try:
+                row = int(input("Enter row (0-2): "))
+                col = int(input("Enter column (0-2): "))
+                
+                if row < 0 or row > 2 or col < 0 or col > 2:
+                    print("Invalid input! Please enter 0, 1, or 2.")
+                    input("Press Enter to continue...")
+                    continue
+                
+                if not self.make_move(row, col):
+                    print("That position is already taken!")
+                    input("Press Enter to continue...")
+                    continue
+                
+                # Check for winner
+                winner = self.check_winner()
+                if winner:
+                    self.display_board()
+                    print(f"🎉 Player {winner} wins!")
+                    break
+                
+                # Check for draw
+                if self.is_board_full():
+                    self.display_board()
+                    print("It's a draw!")
+                    break
+                
+                self.switch_player()
+                
+            except ValueError:
+                print("Invalid input! Please enter numbers only.")
+                input("Press Enter to continue...")
+            except KeyboardInterrupt:
+                print("\\nThanks for playing!")
+                break
+
+# Run the game
+if __name__ == "__main__":
+    game = TicTacToe()
+    game.play()''',
+
+                'javascript': '''// Complete Tic-Tac-Toe Game in JavaScript (Node.js)
+const readline = require('readline');
+
+class TicTacToe {
+    constructor() {
+        this.board = Array(3).fill().map(() => Array(3).fill(' '));
+        this.currentPlayer = 'X';
+        this.rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+    }
+
+    displayBoard() {
+        console.clear();
+        console.log('\\n  Tic-Tac-Toe Game');
+        console.log('  ---------------');
+        console.log('     0   1   2');
+        
+        for (let i = 0; i < 3; i++) {
+            console.log(`  ${i}  ${this.board[i][0]} | ${this.board[i][1]} | ${this.board[i][2]}`);
+            if (i < 2) console.log('    ---|---|---');
+        }
+        console.log('');
+    }
+
+    makeMove(row, col) {
+        if (this.board[row][col] === ' ') {
+            this.board[row][col] = this.currentPlayer;
+            return true;
+        }
+        return false;
+    }
+
+    checkWinner() {
+        // Check rows
+        for (let row of this.board) {
+            if (row[0] === row[1] && row[1] === row[2] && row[0] !== ' ') {
+                return row[0];
+            }
+        }
+
+        // Check columns
+        for (let col = 0; col < 3; col++) {
+            if (this.board[0][col] === this.board[1][col] && 
+                this.board[1][col] === this.board[2][col] && 
+                this.board[0][col] !== ' ') {
+                return this.board[0][col];
+            }
+        }
+
+        // Check diagonals
+        if (this.board[0][0] === this.board[1][1] && 
+            this.board[1][1] === this.board[2][2] && 
+            this.board[0][0] !== ' ') {
+            return this.board[0][0];
+        }
+        
+        if (this.board[0][2] === this.board[1][1] && 
+            this.board[1][1] === this.board[2][0] && 
+            this.board[0][2] !== ' ') {
+            return this.board[0][2];
+        }
+
+        return null;
+    }
+
+    isBoardFull() {
+        return this.board.every(row => row.every(cell => cell !== ' '));
+    }
+
+    switchPlayer() {
+        this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+    }
+
+    async getInput(prompt) {
+        return new Promise(resolve => {
+            this.rl.question(prompt, resolve);
+        });
+    }
+
+    async play() {
+        console.log('Welcome to Tic-Tac-Toe!');
+        console.log('Players will take turns. Enter row and column (0-2) to make a move.');
+
+        while (true) {
+            this.displayBoard();
+            console.log(`Player ${this.currentPlayer}'s turn`);
+
+            try {
+                const row = parseInt(await this.getInput('Enter row (0-2): '));
+                const col = parseInt(await this.getInput('Enter column (0-2): '));
+
+                if (isNaN(row) || isNaN(col) || row < 0 || row > 2 || col < 0 || col > 2) {
+                    console.log('Invalid input! Please enter 0, 1, or 2.');
+                    await this.getInput('Press Enter to continue...');
+                    continue;
+                }
+
+                if (!this.makeMove(row, col)) {
+                    console.log('That position is already taken!');
+                    await this.getInput('Press Enter to continue...');
+                    continue;
+                }
+
+                const winner = this.checkWinner();
+                if (winner) {
+                    this.displayBoard();
+                    console.log(`🎉 Player ${winner} wins!`);
+                    break;
+                }
+
+                if (this.isBoardFull()) {
+                    this.displayBoard();
+                    console.log("It's a draw!");
+                    break;
+                }
+
+                this.switchPlayer();
+            } catch (error) {
+                console.log('An error occurred:', error.message);
+            }
+        }
+
+        this.rl.close();
+    }
+}
+
+// Run the game
+const game = new TicTacToe();
+game.play();''',
+
+                'java': '''// Complete Tic-Tac-Toe Game in Java
+import java.util.Scanner;
+
+public class TicTacToe {
+    private char[][] board;
+    private char currentPlayer;
+    private Scanner scanner;
+
+    public TicTacToe() {
+        board = new char[3][3];
+        currentPlayer = 'X';
+        scanner = new Scanner(System.in);
+        initializeBoard();
+    }
+
+    private void initializeBoard() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                board[i][j] = ' ';
+            }
+        }
+    }
+
+    public void displayBoard() {
+        System.out.print("\\033[2J\\033[H"); // Clear screen
+        System.out.println("\\n  Tic-Tac-Toe Game");
+        System.out.println("  ---------------");
+        System.out.println("     0   1   2");
+        
+        for (int i = 0; i < 3; i++) {
+            System.out.println("  " + i + "  " + board[i][0] + " | " + board[i][1] + " | " + board[i][2]);
+            if (i < 2) System.out.println("    ---|---|---");
+        }
+        System.out.println();
+    }
+
+    public boolean makeMove(int row, int col) {
+        if (board[row][col] == ' ') {
+            board[row][col] = currentPlayer;
+            return true;
+        }
+        return false;
+    }
+
+    public char checkWinner() {
+        // Check rows
+        for (int i = 0; i < 3; i++) {
+            if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][0] != ' ') {
+                return board[i][0];
+            }
+        }
+
+        // Check columns
+        for (int j = 0; j < 3; j++) {
+            if (board[0][j] == board[1][j] && board[1][j] == board[2][j] && board[0][j] != ' ') {
+                return board[0][j];
+            }
+        }
+
+        // Check diagonals
+        if (board[0][0] == board[1][1] && board[1][1] == board[2][2] && board[0][0] != ' ') {
+            return board[0][0];
+        }
+        if (board[0][2] == board[1][1] && board[1][1] == board[2][0] && board[0][2] != ' ') {
+            return board[0][2];
+        }
+
+        return ' ';
+    }
+
+    public boolean isBoardFull() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (board[i][j] == ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void switchPlayer() {
+        currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+    }
+
+    public void play() {
+        System.out.println("Welcome to Tic-Tac-Toe!");
+        System.out.println("Players will take turns. Enter row and column (0-2) to make a move.");
+
+        while (true) {
+            displayBoard();
+            System.out.println("Player " + currentPlayer + "'s turn");
+
+            try {
+                System.out.print("Enter row (0-2): ");
+                int row = scanner.nextInt();
+                System.out.print("Enter column (0-2): ");
+                int col = scanner.nextInt();
+
+                if (row < 0 || row > 2 || col < 0 || col > 2) {
+                    System.out.println("Invalid input! Please enter 0, 1, or 2.");
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine(); // consume newline
+                    scanner.nextLine(); // wait for enter
+                    continue;
+                }
+
+                if (!makeMove(row, col)) {
+                    System.out.println("That position is already taken!");
+                    System.out.println("Press Enter to continue...");
+                    scanner.nextLine(); // consume newline
+                    scanner.nextLine(); // wait for enter
+                    continue;
+                }
+
+                char winner = checkWinner();
+                if (winner != ' ') {
+                    displayBoard();
+                    System.out.println("🎉 Player " + winner + " wins!");
+                    break;
+                }
+
+                if (isBoardFull()) {
+                    displayBoard();
+                    System.out.println("It's a draw!");
+                    break;
+                }
+
+                switchPlayer();
+            } catch (Exception e) {
+                System.out.println("Invalid input! Please enter numbers only.");
+                scanner.nextLine(); // clear invalid input
+            }
+        }
+
+        scanner.close();
+    }
+
+    public static void main(String[] args) {
+        TicTacToe game = new TicTacToe();
+        game.play();
+    }
+}'''
+            }
+            return templates.get(language, templates['python'])
+        
+        elif game_type == 'guessing_game':
+            templates = {
+                'python': '''# Number Guessing Game in Python
+import random
+
+class NumberGuessingGame:
+    def __init__(self, min_num=1, max_num=100):
+        self.min_num = min_num
+        self.max_num = max_num
+        self.secret_number = random.randint(min_num, max_num)
+        self.attempts = 0
+        self.max_attempts = 7
+    
+    def play(self):
+        print(f"🎯 Welcome to the Number Guessing Game!")
+        print(f"I'm thinking of a number between {self.min_num} and {self.max_num}")
+        print(f"You have {self.max_attempts} attempts to guess it!")
+        print("-" * 50)
+        
+        while self.attempts < self.max_attempts:
+            try:
+                guess = int(input(f"Attempt {self.attempts + 1}/{self.max_attempts} - Enter your guess: "))
+                self.attempts += 1
+                
+                if guess == self.secret_number:
+                    print(f"🎉 Congratulations! You guessed it in {self.attempts} attempts!")
+                    return
+                elif guess < self.secret_number:
+                    print("📈 Too low! Try a higher number.")
+                else:
+                    print("📉 Too high! Try a lower number.")
+                    
+                remaining = self.max_attempts - self.attempts
+                if remaining > 0:
+                    print(f"You have {remaining} attempts remaining.\\n")
+                
+            except ValueError:
+                print("Please enter a valid number!")
+                
+        print(f"😅 Game Over! The number was {self.secret_number}")
+        print("Better luck next time!")
+
+# Run the game
+if __name__ == "__main__":
+    game = NumberGuessingGame()
+    game.play()''',
+                
+                'javascript': '''// Number Guessing Game in JavaScript
+const readline = require('readline');
+
+class NumberGuessingGame {
+    constructor(minNum = 1, maxNum = 100) {
+        this.minNum = minNum;
+        this.maxNum = maxNum;
+        this.secretNumber = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+        this.attempts = 0;
+        this.maxAttempts = 7;
+        this.rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+    }
+
+    async getGuess() {
+        return new Promise(resolve => {
+            this.rl.question(`Attempt ${this.attempts + 1}/${this.maxAttempts} - Enter your guess: `, resolve);
+        });
+    }
+
+    async play() {
+        console.log('🎯 Welcome to the Number Guessing Game!');
+        console.log(`I'm thinking of a number between ${this.minNum} and ${this.maxNum}`);
+        console.log(`You have ${this.maxAttempts} attempts to guess it!`);
+        console.log('-'.repeat(50));
+
+        while (this.attempts < this.maxAttempts) {
+            try {
+                const input = await this.getGuess();
+                const guess = parseInt(input);
+                
+                if (isNaN(guess)) {
+                    console.log('Please enter a valid number!');
+                    continue;
+                }
+                
+                this.attempts++;
+
+                if (guess === this.secretNumber) {
+                    console.log(`🎉 Congratulations! You guessed it in ${this.attempts} attempts!`);
+                    this.rl.close();
+                    return;
+                } else if (guess < this.secretNumber) {
+                    console.log('📈 Too low! Try a higher number.');
+                } else {
+                    console.log('📉 Too high! Try a lower number.');
+                }
+
+                const remaining = this.maxAttempts - this.attempts;
+                if (remaining > 0) {
+                    console.log(`You have ${remaining} attempts remaining.\\n`);
+                }
+
+            } catch (error) {
+                console.log('An error occurred:', error.message);
+            }
+        }
+
+        console.log(`😅 Game Over! The number was ${this.secretNumber}`);
+        console.log('Better luck next time!');
+        this.rl.close();
+    }
+}
+
+// Run the game
+const game = new NumberGuessingGame();
+game.play();'''
+            }
+            return templates.get(language, templates['python'])
+        
+        # Default fallback
+        return self._generate_generic_template(f"{game_type} game", language)
+    
     
     def _generate_generic_math_template(self, instruction: str, language: str, operation: str) -> str:
         """Generate generic math operation templates."""
