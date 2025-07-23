@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Nexus CLI - A custom AI-powered coding assistant
-Similar to Gemini CLI but using a custom trained model
+Nexus CLI - iLLuMinator-4.7B AI-Powered Coding Assistant
+Advanced CLI with code generation, web intelligence, and comprehensive analysis capabilities
 """
 
 import argparse
@@ -10,30 +10,66 @@ import os
 import sys
 import subprocess
 import re
+import asyncio
+import aiohttp
+import json
+import time
+import requests
+import tempfile
+import threading
+import signal
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union, Tuple
+from datetime import datetime
+from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Rich for beautiful CLI output
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
 from rich.table import Table
 from rich.syntax import Syntax
 from rich.tree import Tree
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from rich.live import Live
 from rich.layout import Layout
 from rich.text import Text
 from rich.align import Align
-import json
-import time
-from datetime import datetime
+from rich.status import Status
+from rich.columns import Columns
+from rich.rule import Rule
+from rich.padding import Padding
 
-# Import our modules
-from model.illuminator_nexus import NexusModel  # iLLuMinator-4.7B backend
-from tools import FileTools, CodeTools, ProjectTools, MemoryTools
+# PyTorch and ML imports
+import torch
+import torch.nn.functional as F
+from torch import nn
+from transformers import AutoTokenizer, GPT2LMHeadModel
+import tiktoken
 
-# Rich for beautiful CLI output
+# Import our enhanced model architecture
+from model.nexus_llm import iLLuMinator, iLLuMinatorConfig
+
+# ANSI color codes
 BLUE = "\033[94m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+RED = "\033[91m"
+PURPLE = "\033[95m"
+CYAN = "\033[96m"
 RESET = "\033[0m"
+
+# Error handling setup
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('nexus_cli.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class IntelligentNexusCLI:
     """Intelligent Nexus CLI with modern features and context awareness."""
