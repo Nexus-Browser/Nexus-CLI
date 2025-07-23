@@ -75,11 +75,9 @@ class FastCodeGenerator:
             },
             "rust": {
                 "hello_world": 'fn main() {\n    println!("Hello, World!");\n}',
-                "function": 'fn {name}() {\n    // TODO: Implement {name}\n}',
+                "function": 'fn {name}({params}) {\n    // TODO: Implement {name}\n}',
                 "struct": 'struct {name} {\n    // TODO: Add fields\n}\n\nimpl {name} {\n    fn new() -> Self {\n        {name} {}\n    }\n}',
-                "web_server": 'use std::io::prelude::*;\nuse std::net::{TcpListener, TcpStream};\n\nfn main() {\n    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();\n    println!("Server running on http://127.0.0.1:7878");\n    \n    for stream in listener.incoming() {\n        let stream = stream.unwrap();\n        handle_connection(stream);\n    }\n}\n\nfn handle_connection(mut stream: TcpStream) {\n    let response = "HTTP/1.1 200 OK\\r\\n\\r\\nHello, World!";\n    stream.write(response.as_bytes()).unwrap();\n    stream.flush().unwrap();\n}',
-                "fibonacci": 'fn fibonacci(n: u32) -> u32 {\n    match n {\n        0 => 0,\n        1 => 1,\n        _ => fibonacci(n - 1) + fibonacci(n - 2),\n    }\n}\n\nfn main() {\n    for i in 0..10 {\n        println!("Fibonacci({}) = {}", i, fibonacci(i));\n    }\n}',
-                "factorial": 'fn factorial(n: u32) -> u32 {\n    match n {\n        0 | 1 => 1,\n        _ => n * factorial(n - 1),\n    }\n}\n\nfn main() {\n    let num = 5;\n    println!("Factorial of {} = {}", num, factorial(num));\n}'
+                "web_server": 'use std::io::prelude::*;\nuse std::net::{TcpListener, TcpStream};\n\nfn main() {\n    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();\n    println!("Server running on http://127.0.0.1:7878");\n    \n    for stream in listener.incoming() {\n        let stream = stream.unwrap();\n        handle_connection(stream);\n    }\n}\n\nfn handle_connection(mut stream: TcpStream) {\n    let response = "HTTP/1.1 200 OK\\r\\n\\r\\nHello, World!";\n    stream.write(response.as_bytes()).unwrap();\n    stream.flush().unwrap();\n}'
             }
         }
     
@@ -91,24 +89,6 @@ class FastCodeGenerator:
         if "hello" in instruction_lower and "world" in instruction_lower:
             return self.code_templates.get(language, {}).get("hello_world", "# Hello World code not available for this language")
         
-        elif any(keyword in instruction_lower for keyword in ["web", "server", "flask", "api", "http"]):
-            return self.code_templates.get(language, {}).get("web_server", "# Web server template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["calculator", "math", "calculate", "arithmetic"]):
-            return self.code_templates.get(language, {}).get("calculator", "# Calculator template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["file", "read", "open", "reader"]):
-            return self.code_templates.get(language, {}).get("file_reader", "# File reader template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["data", "analyze", "pandas", "csv", "analysis"]):
-            return self.code_templates.get(language, {}).get("data_analysis", "# Data analysis template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["request", "api", "fetch", "get"]):
-            return self.code_templates.get(language, {}).get("api", "# API template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["fibonacci", "fib"]):
-            return self.code_templates.get(language, {}).get("fibonacci", "# Fibonacci template not available for this language")
-        
         elif "function" in instruction_lower:
             # Extract function name if possible
             words = instruction.split()
@@ -118,28 +98,7 @@ class FastCodeGenerator:
                     name = words[i + 1].replace('"', '').replace("'", "")
                     break
             
-            # Check for specific function types
-            if any(keyword in instruction_lower for keyword in ["hello", "greet"]):
-                name = "hello_world"
-            elif any(keyword in instruction_lower for keyword in ["add", "sum"]):
-                name = "add_numbers"
-            elif any(keyword in instruction_lower for keyword in ["factorial"]):
-                name = "factorial"
-            
             template = self.code_templates.get(language, {}).get("function", "# Function template not available")
-            
-            # Generate appropriate parameters based on function type
-            if name == "add_numbers":
-                params = "a, b" if language == "python" else "a, b"
-                if language == "python":
-                    return f'def {name}({params}):\n    """Add two numbers and return the result"""\n    return a + b\n\nif __name__ == "__main__":\n    result = {name}(5, 3)\n    print(f"Result: {{result}}")'
-                elif language == "javascript":
-                    return f'function {name}({params}) {{\n    // Add two numbers and return the result\n    return a + b;\n}}\n\nconsole.log("Result:", {name}(5, 3));'
-            elif name == "factorial":
-                params = "n" if language == "python" else "n"
-                if language == "python":
-                    return f'def {name}({params}):\n    """Calculate factorial of n"""\n    if n <= 1:\n        return 1\n    return n * {name}(n - 1)\n\nif __name__ == "__main__":\n    result = {name}(5)\n    print(f"Factorial of 5: {{result}}")'
-            
             return template.format(name=name, params="")
         
         elif "class" in instruction_lower:
@@ -154,17 +113,30 @@ class FastCodeGenerator:
             template = self.code_templates.get(language, {}).get("class", "# Class template not available")
             return template.format(name=name)
         
-        # Default: generate a basic function based on the instruction
-        instruction_clean = instruction.replace("python", "").replace("function", "").strip()
+        elif any(keyword in instruction_lower for keyword in ["web", "server", "flask", "api"]):
+            return self.code_templates.get(language, {}).get("web_server", "# Web server template not available for this language")
         
+        elif any(keyword in instruction_lower for keyword in ["request", "api", "fetch", "get"]):
+            return self.code_templates.get(language, {}).get("api", "# API template not available for this language")
+        
+        elif any(keyword in instruction_lower for keyword in ["file", "read", "open"]):
+            return self.code_templates.get(language, {}).get("file_reader", "# File reader template not available for this language")
+        
+        elif any(keyword in instruction_lower for keyword in ["calculator", "math", "calculate"]):
+            return self.code_templates.get(language, {}).get("calculator", "# Calculator template not available for this language")
+        
+        elif any(keyword in instruction_lower for keyword in ["data", "analyze", "pandas", "csv"]):
+            return self.code_templates.get(language, {}).get("data_analysis", "# Data analysis template not available for this language")
+        
+        # Default: generate a basic function
         if language == "python":
-            return f'def process_data():\n    """{instruction}"""\n    # TODO: Implement the functionality for: {instruction_clean}\n    pass\n\nif __name__ == "__main__":\n    process_data()'
+            return f'def process_data():\n    """{instruction}"""\n    # TODO: Implement the functionality\n    pass\n\nif __name__ == "__main__":\n    process_data()'
         elif language == "javascript":
-            return f'function processData() {{\n    // {instruction}\n    // TODO: Implement the functionality for: {instruction_clean}\n}}\n\nprocessData();'
+            return f'function processData() {{\n    // {instruction}\n    // TODO: Implement the functionality\n}}\n\nprocessData();'
         elif language == "rust":
-            return f'fn process_data() {{\n    // {instruction}\n    // TODO: Implement the functionality for: {instruction_clean}\n}}\n\nfn main() {{\n    process_data();\n}}'
+            return f'fn process_data() {{\n    // {instruction}\n    // TODO: Implement the functionality\n}}\n\nfn main() {{\n    process_data();\n}}'
         else:
-            return f'// {instruction}\n// TODO: Implement the functionality for: {instruction_clean}'
+            return f'// {instruction}\n// TODO: Implement the functionality'
 
 class iLLuMinatorModel:
     """Fast and intelligent iLLuMinator-4.7B model for code generation and conversation"""

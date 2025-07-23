@@ -2,7 +2,7 @@
 """
 iLLuMinator-4.7B Model Integration
 Fast and intelligent language model for code generation and text output
-Now powered by multiple backend options for blazing fast local inference
+Now powered by CodeLlama-7B for blazing fast local inference
 """
 
 import os
@@ -52,7 +52,7 @@ class ModelConfig:
     eos_token_id: Optional[int] = None
 
 class FastCodeGenerator:
-    """Fast code generator using intelligent patterns and templates"""
+    """Fast code generator using simple patterns and templates"""
     
     def __init__(self):
         self.code_templates = {
@@ -62,24 +62,18 @@ class FastCodeGenerator:
                 "class": 'class {name}:\n    """TODO: Implement {name}"""\n    \n    def __init__(self):\n        pass',
                 "web_server": 'from flask import Flask\n\napp = Flask(__name__)\n\n@app.route("/")\ndef hello():\n    return "Hello, World!"\n\nif __name__ == "__main__":\n    app.run(debug=True)',
                 "api": 'import requests\n\ndef fetch_data(url):\n    """Fetch data from API"""\n    try:\n        response = requests.get(url)\n        response.raise_for_status()\n        return response.json()\n    except requests.RequestException as e:\n        print(f"Error: {e}")\n        return None',
-                "file_reader": 'def read_file(filename):\n    """Read file contents"""\n    try:\n        with open(filename, "r") as f:\n            return f.read()\n    except FileNotFoundError:\n        print(f"File {filename} not found")\n        return None',
-                "calculator": 'def calculator():\n    """Simple calculator"""\n    while True:\n        try:\n            expression = input("Enter calculation (or \'quit\'): ")\n            if expression.lower() == \'quit\':\n                break\n            result = eval(expression)\n            print(f"Result: {result}")\n        except Exception as e:\n            print(f"Error: {e}")\n\nif __name__ == "__main__":\n    calculator()',
-                "data_analysis": 'import pandas as pd\nimport numpy as np\n\ndef analyze_data(filename):\n    """Analyze data from CSV file"""\n    try:\n        df = pd.read_csv(filename)\n        print(f"Shape: {df.shape}")\n        print(f"Columns: {df.columns.tolist()}")\n        print(f"Summary:\\n{df.describe()}")\n        return df\n    except Exception as e:\n        print(f"Error: {e}")\n        return None'
+                "file_reader": 'def read_file(filename):\n    """Read file contents"""\n    try:\n        with open(filename, "r") as f:\n            return f.read()\n    except FileNotFoundError:\n        print(f"File {filename} not found")\n        return None'
             },
             "javascript": {
                 "hello_world": 'function helloWorld() {\n    console.log("Hello, World!");\n}\n\nhelloWorld();',
                 "function": 'function {name}({params}) {\n    // TODO: Implement {name}\n}',
                 "class": 'class {name} {\n    constructor() {\n        // TODO: Initialize {name}\n    }\n}',
-                "async_function": 'async function {name}({params}) {\n    try {\n        // TODO: Implement async {name}\n    } catch (error) {\n        console.error("Error:", error);\n    }\n}',
-                "web_server": 'const express = require(\'express\');\nconst app = express();\nconst port = 3000;\n\napp.get(\'/\', (req, res) => {\n    res.send(\'Hello, World!\');\n});\n\napp.listen(port, () => {\n    console.log(`Server running at http://localhost:${port}`);\n});'
+                "async_function": 'async function {name}({params}) {\n    try {\n        // TODO: Implement async {name}\n    } catch (error) {\n        console.error("Error:", error);\n    }\n}'
             },
             "rust": {
                 "hello_world": 'fn main() {\n    println!("Hello, World!");\n}',
-                "function": 'fn {name}() {\n    // TODO: Implement {name}\n}',
-                "struct": 'struct {name} {\n    // TODO: Add fields\n}\n\nimpl {name} {\n    fn new() -> Self {\n        {name} {}\n    }\n}',
-                "web_server": 'use std::io::prelude::*;\nuse std::net::{TcpListener, TcpStream};\n\nfn main() {\n    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();\n    println!("Server running on http://127.0.0.1:7878");\n    \n    for stream in listener.incoming() {\n        let stream = stream.unwrap();\n        handle_connection(stream);\n    }\n}\n\nfn handle_connection(mut stream: TcpStream) {\n    let response = "HTTP/1.1 200 OK\\r\\n\\r\\nHello, World!";\n    stream.write(response.as_bytes()).unwrap();\n    stream.flush().unwrap();\n}',
-                "fibonacci": 'fn fibonacci(n: u32) -> u32 {\n    match n {\n        0 => 0,\n        1 => 1,\n        _ => fibonacci(n - 1) + fibonacci(n - 2),\n    }\n}\n\nfn main() {\n    for i in 0..10 {\n        println!("Fibonacci({}) = {}", i, fibonacci(i));\n    }\n}',
-                "factorial": 'fn factorial(n: u32) -> u32 {\n    match n {\n        0 | 1 => 1,\n        _ => n * factorial(n - 1),\n    }\n}\n\nfn main() {\n    let num = 5;\n    println!("Factorial of {} = {}", num, factorial(num));\n}'
+                "function": 'fn {name}({params}) {\n    // TODO: Implement {name}\n}',
+                "struct": 'struct {name} {\n    // TODO: Add fields\n}\n\nimpl {name} {\n    fn new() -> Self {\n        {name} {}\n    }\n}'
             }
         }
     
@@ -91,24 +85,6 @@ class FastCodeGenerator:
         if "hello" in instruction_lower and "world" in instruction_lower:
             return self.code_templates.get(language, {}).get("hello_world", "# Hello World code not available for this language")
         
-        elif any(keyword in instruction_lower for keyword in ["web", "server", "flask", "api", "http"]):
-            return self.code_templates.get(language, {}).get("web_server", "# Web server template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["calculator", "math", "calculate", "arithmetic"]):
-            return self.code_templates.get(language, {}).get("calculator", "# Calculator template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["file", "read", "open", "reader"]):
-            return self.code_templates.get(language, {}).get("file_reader", "# File reader template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["data", "analyze", "pandas", "csv", "analysis"]):
-            return self.code_templates.get(language, {}).get("data_analysis", "# Data analysis template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["request", "api", "fetch", "get"]):
-            return self.code_templates.get(language, {}).get("api", "# API template not available for this language")
-        
-        elif any(keyword in instruction_lower for keyword in ["fibonacci", "fib"]):
-            return self.code_templates.get(language, {}).get("fibonacci", "# Fibonacci template not available for this language")
-        
         elif "function" in instruction_lower:
             # Extract function name if possible
             words = instruction.split()
@@ -118,28 +94,7 @@ class FastCodeGenerator:
                     name = words[i + 1].replace('"', '').replace("'", "")
                     break
             
-            # Check for specific function types
-            if any(keyword in instruction_lower for keyword in ["hello", "greet"]):
-                name = "hello_world"
-            elif any(keyword in instruction_lower for keyword in ["add", "sum"]):
-                name = "add_numbers"
-            elif any(keyword in instruction_lower for keyword in ["factorial"]):
-                name = "factorial"
-            
             template = self.code_templates.get(language, {}).get("function", "# Function template not available")
-            
-            # Generate appropriate parameters based on function type
-            if name == "add_numbers":
-                params = "a, b" if language == "python" else "a, b"
-                if language == "python":
-                    return f'def {name}({params}):\n    """Add two numbers and return the result"""\n    return a + b\n\nif __name__ == "__main__":\n    result = {name}(5, 3)\n    print(f"Result: {{result}}")'
-                elif language == "javascript":
-                    return f'function {name}({params}) {{\n    // Add two numbers and return the result\n    return a + b;\n}}\n\nconsole.log("Result:", {name}(5, 3));'
-            elif name == "factorial":
-                params = "n" if language == "python" else "n"
-                if language == "python":
-                    return f'def {name}({params}):\n    """Calculate factorial of n"""\n    if n <= 1:\n        return 1\n    return n * {name}(n - 1)\n\nif __name__ == "__main__":\n    result = {name}(5)\n    print(f"Factorial of 5: {{result}}")'
-            
             return template.format(name=name, params="")
         
         elif "class" in instruction_lower:
@@ -154,17 +109,24 @@ class FastCodeGenerator:
             template = self.code_templates.get(language, {}).get("class", "# Class template not available")
             return template.format(name=name)
         
-        # Default: generate a basic function based on the instruction
-        instruction_clean = instruction.replace("python", "").replace("function", "").strip()
+        elif any(keyword in instruction_lower for keyword in ["web", "server", "flask", "api"]):
+            return self.code_templates.get(language, {}).get("web_server", "# Web server template not available for this language")
         
+        elif any(keyword in instruction_lower for keyword in ["request", "api", "fetch", "get"]):
+            return self.code_templates.get(language, {}).get("api", "# API template not available for this language")
+        
+        elif any(keyword in instruction_lower for keyword in ["file", "read", "open"]):
+            return self.code_templates.get(language, {}).get("file_reader", "# File reader template not available for this language")
+        
+        # Default: generate a basic function
         if language == "python":
-            return f'def process_data():\n    """{instruction}"""\n    # TODO: Implement the functionality for: {instruction_clean}\n    pass\n\nif __name__ == "__main__":\n    process_data()'
+            return f'def process_data():\n    """{instruction}"""\n    # TODO: Implement the functionality\n    pass\n\nif __name__ == "__main__":\n    process_data()'
         elif language == "javascript":
-            return f'function processData() {{\n    // {instruction}\n    // TODO: Implement the functionality for: {instruction_clean}\n}}\n\nprocessData();'
+            return f'function processData() {{\n    // {instruction}\n    // TODO: Implement the functionality\n}}\n\nprocessData();'
         elif language == "rust":
-            return f'fn process_data() {{\n    // {instruction}\n    // TODO: Implement the functionality for: {instruction_clean}\n}}\n\nfn main() {{\n    process_data();\n}}'
+            return f'fn process_data() {{\n    // {instruction}\n    // TODO: Implement the functionality\n}}\n\nfn main() {{\n    process_data();\n}}'
         else:
-            return f'// {instruction}\n// TODO: Implement the functionality for: {instruction_clean}'
+            return f'// {instruction}\n// TODO: Implement the functionality'
 
 class iLLuMinatorModel:
     """Fast and intelligent iLLuMinator-4.7B model for code generation and conversation"""
@@ -508,3 +470,372 @@ if __name__ == "__main__":
         print(f"{key}: {value}")
     
     print("\niLLuMinator-4.7B Fast Edition ready for use!")
+    MODEL_ARCH_AVAILABLE = False
+    
+    # Fallback configuration class
+    @dataclass
+    class iLLuMinatorConfig:
+        n_layer: int = 32
+        n_head: int = 32
+        n_embd: int = 2560
+        vocab_size: int = 50304
+        block_size: int = 4096
+        bias: bool = False
+        dropout: float = 0.0
+        flash_attention: bool = True
+    
+    # Fallback model class
+    class iLLuMinator:
+        def __init__(self, config):
+            self.config = config
+        
+        def generate(self, input_ids, max_new_tokens=100, temperature=0.7, top_p=0.9, **kwargs):
+            # Return dummy output for fallback
+            return torch.tensor([[1, 2, 3, 4, 5]]) if TORCH_AVAILABLE else [[1, 2, 3, 4, 5]]
+        
+        def to(self, device):
+            return self
+        
+        def eval(self):
+            return self
+
+logger = logging.getLogger(__name__)
+
+class iLLuMinatorModel:
+    """
+    iLLuMinator-4.7B Model Wrapper
+    Provides a clean interface for the 4.7 billion parameter language model
+    """
+    
+    def __init__(self, model_path: str = "model/illuminator_model", device: str = "auto"):
+        self.model_path = model_path
+        self.device = self._setup_device(device)
+        self.model = None
+        self.tokenizer = None
+        self.config = None
+        self.is_loaded = False
+        
+        # Load model if available
+        self._initialize_model()
+    
+    def _setup_device(self, device: str) -> str:
+        """Setup the appropriate device for model inference"""
+        if device == "auto":
+            if TORCH_AVAILABLE and torch.cuda.is_available():
+                return "cuda"
+            else:
+                return "cpu"
+        return device
+    
+    def _initialize_model(self):
+        """Initialize the iLLuMinator-4.7B model"""
+        try:
+            logger.info("Initializing iLLuMinator-4.7B model...")
+            
+            # Create model configuration
+            self.config = iLLuMinatorConfig(
+                n_layer=32,
+                n_head=32,
+                n_embd=2560,
+                vocab_size=50304,
+                block_size=4096,
+                bias=False,
+                dropout=0.0,
+                flash_attention=True
+            )
+            
+            # Setup tokenizer
+            if TIKTOKEN_AVAILABLE:
+                self.tokenizer = tiktoken.get_encoding("gpt2")
+            else:
+                self.tokenizer = MockTokenizer()
+            
+            # Initialize model
+            self.model = iLLuMinator(self.config)
+            
+            if TORCH_AVAILABLE:
+                self.model.to(self.device)
+                self.model.eval()
+            
+            # Try to load pretrained weights
+            self._load_pretrained_weights()
+            
+            self.is_loaded = True
+            logger.info(f"iLLuMinator-4.7B loaded successfully on {self.device}")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize iLLuMinator model: {e}")
+            self.is_loaded = False
+    
+    def _load_pretrained_weights(self):
+        """Load pretrained weights if available"""
+        weight_files = [
+            f"{self.model_path}/illuminator_4b7.pt",
+            f"{self.model_path}/model.pt",
+            "model/nexus_coder.pt",
+            "model/nexuscoder.pt"
+        ]
+        
+        for weight_file in weight_files:
+            if os.path.exists(weight_file):
+                try:
+                    if TORCH_AVAILABLE:
+                        checkpoint = torch.load(weight_file, map_location=self.device)
+                        if 'model' in checkpoint:
+                            self.model.load_state_dict(checkpoint['model'])
+                        else:
+                            self.model.load_state_dict(checkpoint)
+                        logger.info(f"Loaded weights from {weight_file}")
+                        return
+                except Exception as e:
+                    logger.warning(f"Failed to load weights from {weight_file}: {e}")
+                    continue
+        
+        logger.info("No pretrained weights found, using randomly initialized model")
+    
+    def is_available(self) -> bool:
+        """Check if the model is available and loaded"""
+        return self.is_loaded and self.model is not None
+    
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get information about the loaded model"""
+        return {
+            "name": "iLLuMinator-4.7B",
+            "parameters": "4.7 billion",
+            "architecture": "Transformer with FlashAttention",
+            "context_length": self.config.block_size if self.config else 4096,
+            "device": self.device,
+            "loaded": self.is_loaded,
+            "torch_available": TORCH_AVAILABLE,
+            "model_arch_available": MODEL_ARCH_AVAILABLE,
+            "tiktoken_available": TIKTOKEN_AVAILABLE
+        }
+    
+    def test_connection(self) -> bool:
+        """Test if the model is working properly"""
+        if not self.is_available():
+            return False
+        
+        try:
+            # Simple test generation
+            test_prompt = "Hello, this is a test."
+            response = self.generate_text(test_prompt, max_tokens=10)
+            return len(response) > 0
+        except Exception as e:
+            logger.error(f"Model test failed: {e}")
+            return False
+    
+    def generate_text(self, prompt: str, max_tokens: int = 100, temperature: float = 0.7, 
+                      top_p: float = 0.9) -> str:
+        """Generate text using the iLLuMinator model"""
+        if not self.is_available():
+            return "iLLuMinator model not available. Please check the model installation."
+        
+        try:
+            # Tokenize input
+            if hasattr(self.tokenizer, 'encode'):
+                tokens = self.tokenizer.encode(prompt)
+            else:
+                tokens = list(range(len(prompt.split())))
+            
+            # Limit input length
+            max_input_length = self.config.block_size - max_tokens if self.config else 3096
+            if len(tokens) > max_input_length:
+                tokens = tokens[-max_input_length:]
+            
+            if TORCH_AVAILABLE and hasattr(self.model, 'generate'):
+                # Use PyTorch model generation
+                input_ids = torch.tensor([tokens], device=self.device)
+                
+                with torch.no_grad():
+                    generated = self.model.generate(
+                        input_ids,
+                        max_new_tokens=max_tokens,
+                        temperature=temperature,
+                        top_p=top_p,
+                        do_sample=True,
+                        pad_token_id=getattr(self.tokenizer, 'eot_token', 0)
+                    )
+                
+                # Decode generated tokens
+                new_tokens = generated[0][len(tokens):].tolist()
+                if hasattr(self.tokenizer, 'decode'):
+                    response = self.tokenizer.decode(new_tokens)
+                else:
+                    response = " ".join(f"generated_{i}" for i in new_tokens)
+            else:
+                # Fallback generation
+                response = self._fallback_generation(prompt, max_tokens)
+            
+            return response.strip()
+            
+        except Exception as e:
+            logger.error(f"Text generation error: {e}")
+            return f"Error generating text: {e}"
+    
+    def generate_code(self, instruction: str, language: str = "python", max_tokens: int = 200) -> str:
+        """Generate code using the iLLuMinator model"""
+        if not self.is_available():
+            return "# iLLuMinator model not available\n# Please check the model installation"
+        
+        # Create a code-specific prompt
+        code_prompt = f"""Generate {language} code for the following instruction:
+
+Instruction: {instruction}
+
+Please provide clean, well-commented {language} code:
+
+```{language}
+"""
+        
+        try:
+            generated_text = self.generate_text(code_prompt, max_tokens=max_tokens, temperature=0.7)
+            
+            # Extract code from the response
+            if "```" in generated_text:
+                # Find code block
+                parts = generated_text.split("```")
+                if len(parts) >= 2:
+                    code = parts[1]
+                    # Remove language identifier if present
+                    lines = code.split('\n')
+                    if lines and lines[0].strip().lower() in [language, language[:2]]:
+                        code = '\n'.join(lines[1:])
+                    return code.strip()
+            
+            # If no code block found, return the generated text
+            return generated_text.strip()
+            
+        except Exception as e:
+            logger.error(f"Code generation error: {e}")
+            return f"# Error generating {language} code: {e}"
+    
+    def generate_response(self, prompt: str, max_length: int = 150, temperature: float = 0.7) -> str:
+        """Generate a conversational response using the iLLuMinator model"""
+        if not self.is_available():
+            return "I'm sorry, the iLLuMinator model is not available right now. Please check the installation."
+        
+        # Create a conversational prompt
+        conversation_prompt = f"""You are iLLuMinator, an intelligent AI assistant that helps with coding and general questions.
+
+User: {prompt}
+iLLuMinator:"""
+        
+        try:
+            response = self.generate_text(conversation_prompt, max_tokens=max_length, temperature=temperature)
+            
+            # Clean up the response
+            response = self._clean_conversational_response(response)
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Response generation error: {e}")
+            return f"I encountered an error while processing your request: {e}"
+    
+    def analyze_code(self, code: str) -> Dict[str, Any]:
+        """Analyze code using the iLLuMinator model"""
+        if not self.is_available():
+            return {"error": "iLLuMinator model not available"}
+        
+        analysis_prompt = f"""Analyze the following code and provide insights:
+
+```
+{code}
+```
+
+Please provide:
+1. Code quality assessment
+2. Potential improvements
+3. Security concerns
+4. Performance optimizations
+
+Analysis:"""
+        
+        try:
+            analysis_text = self.generate_text(analysis_prompt, max_tokens=300, temperature=0.6)
+            
+            # Parse the analysis (basic implementation)
+            return {
+                "analysis": analysis_text,
+                "function_count": code.count("def "),
+                "class_count": code.count("class "),
+                "import_count": code.count("import ") + code.count("from "),
+                "lines": len(code.splitlines())
+            }
+            
+        except Exception as e:
+            logger.error(f"Code analysis error: {e}")
+            return {"error": f"Code analysis failed: {e}"}
+    
+    def _fallback_generation(self, prompt: str, max_tokens: int) -> str:
+        """Fallback text generation when model is not available"""
+        responses = [
+            "I understand your request. However, the full iLLuMinator model is not available right now.",
+            "This is a placeholder response. Please install PyTorch and the model weights for full functionality.",
+            "The iLLuMinator-4.7B model would generate a detailed response here.",
+            "To get the full capabilities, please ensure all dependencies are installed."
+        ]
+        
+        # Simple keyword-based responses
+        prompt_lower = prompt.lower()
+        if "code" in prompt_lower or "function" in prompt_lower:
+            return "# Placeholder code\n# Install the full model for actual code generation\ndef example_function():\n    pass"
+        elif "hello" in prompt_lower or "hi" in prompt_lower:
+            return "Hello! I'm iLLuMinator. Please install the full model for complete functionality."
+        else:
+            return responses[hash(prompt) % len(responses)]
+    
+    def _clean_conversational_response(self, response: str) -> str:
+        """Clean up conversational responses"""
+        # Remove common artifacts
+        response = response.replace("iLLuMinator:", "").strip()
+        response = response.replace("User:", "").strip()
+        
+        # Split by lines and take meaningful content
+        lines = response.split('\n')
+        cleaned_lines = []
+        
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith('User:') and not line.startswith('iLLuMinator:'):
+                cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines) if cleaned_lines else response
+
+
+def create_illuminator_model(model_path: str = "model/illuminator_model", device: str = "auto") -> iLLuMinatorModel:
+    """Factory function to create an iLLuMinator model instance"""
+    return iLLuMinatorModel(model_path=model_path, device=device)
+
+
+# Compatibility layer for existing NexusModel interface
+class NexusModel:
+    """Compatibility wrapper to integrate iLLuMinator with existing Nexus CLI"""
+    
+    def __init__(self, model_path: str = "model/illuminator_model"):
+        self.illuminator = create_illuminator_model(model_path)
+    
+    def is_available(self) -> bool:
+        return self.illuminator.is_available()
+    
+    def get_model_info(self) -> Dict[str, Any]:
+        return self.illuminator.get_model_info()
+    
+    def test_connection(self) -> bool:
+        return self.illuminator.test_connection()
+    
+    def generate_code(self, instruction: str, language: str = "python") -> str:
+        return self.illuminator.generate_code(instruction, language)
+    
+    def generate_response(self, prompt: str, max_length: int = 150, temperature: float = 0.7) -> str:
+        return self.illuminator.generate_response(prompt, max_length, temperature)
+    
+    def analyze_code(self, code: str) -> Dict[str, Any]:
+        return self.illuminator.analyze_code(code)
+
+
+# For backwards compatibility
+def create_nexus_model(model_path: str = "model/illuminator_model") -> NexusModel:
+    """Create a NexusModel instance with iLLuMinator backend"""
+    return NexusModel(model_path)
