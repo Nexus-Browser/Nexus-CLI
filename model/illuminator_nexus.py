@@ -332,33 +332,10 @@ class iLLuMinatorModel:
             # Enhanced intelligent response patterns with comprehensive knowledge
             prompt_lower = prompt.lower()
             
-            # Greetings
-            if any(greeting in prompt_lower for greeting in ["hello", "hi", "hey"]):
-                return "Hello! I'm your iLLuMinator coding assistant. How can I help you with your coding projects today?"
-            
-            elif "how are you" in prompt_lower:
-                return "I'm running smoothly and ready to help with any coding tasks! What would you like to work on?"
-            
-            # Programming and Development Questions
-            elif any(keyword in prompt_lower for keyword in ["neural network", "neural net", "machine learning", "ml", "deep learning"]):
-                return """Neural networks are computational models inspired by biological neural networks. They consist of:
-
-• **Neurons (Nodes)**: Basic processing units that receive inputs, apply weights, and produce outputs
-• **Layers**: Input layer, hidden layers, and output layer
-• **Weights & Biases**: Parameters that the network learns during training
-• **Activation Functions**: Functions like ReLU, Sigmoid, or Tanh that introduce non-linearity
-
-**Common Types:**
-- **Feedforward**: Data flows in one direction (e.g., basic MLPs)
-- **Convolutional (CNNs)**: Great for image processing
-- **Recurrent (RNNs/LSTMs)**: Handle sequential data like text or time series
-- **Transformers**: Modern architecture for language models (like me!)
-
-**Applications**: Image recognition, natural language processing, recommendation systems, autonomous vehicles, and much more!
-
-Would you like me to generate some neural network code examples?"""
-
-            elif any(keyword in prompt_lower for keyword in ["javascript", "js"]) and not any(word in prompt_lower for word in ["python", "rust", "java"]):
+            # Specific JavaScript patterns (check early to catch all variations)
+            if ("explain javascript" in prompt_lower or 
+                "what is javascript" in prompt_lower or 
+                prompt_lower.strip() in ["javascript", "js"]):
                 return """JavaScript is the language of the web! Here's what you need to know:
 
 **Core Concepts:**
@@ -386,6 +363,197 @@ Would you like me to generate some neural network code examples?"""
 - Mobile Developer (React Native)
 
 Want me to generate some JavaScript code? Try: `code javascript <your idea>`"""
+            
+            # Greetings
+            if any(greeting in prompt_lower for greeting in ["hello", "hi", "hey"]):
+                return "Hello! I'm your iLLuMinator coding assistant. How can I help you with your coding projects today?"
+            
+            elif "how are you" in prompt_lower:
+                return "I'm running smoothly and ready to help with any coding tasks! What would you like to work on?"
+            
+            # People and Biography Questions
+            elif any(keyword in prompt_lower for keyword in ["who is", "jensen huang", "nvidia ceo"]):
+                if "jensen huang" in prompt_lower or "nvidia" in prompt_lower:
+                    return """Jensen Huang is a prominent figure in the tech industry:
+
+**Professional Background:**
+• **CEO & Co-founder of NVIDIA** (since 1993)
+• Born in Taiwan, moved to the US as a child
+• Graduated from Oregon State University and Stanford University
+• Led NVIDIA from a small startup to a $2+ trillion company
+
+**Key Achievements:**
+- **GPU Revolution**: Pioneered graphics processing units for gaming and computing
+- **AI Leadership**: Transformed NVIDIA into the leading AI chip company
+- **CUDA Platform**: Created programming platform that enabled GPU computing
+- **Deep Learning**: NVIDIA GPUs power most AI/ML research and applications
+
+**Recent Impact:**
+- **AI Boom**: NVIDIA chips power ChatGPT, GPT-4, and most AI systems
+- **Stock Performance**: NVIDIA became one of the most valuable companies
+- **Industry Influence**: Called "The Godfather of AI Hardware"
+- **Innovation**: Leading autonomous vehicles, robotics, and metaverse technologies
+
+**Notable Quotes:**
+"The more you buy, the more you save!" (famous NVIDIA keynote line)
+"AI is the most important technology of our time"
+
+**Fun Facts:**
+- Known for his signature black leather jacket at presentations
+- Started NVIDIA at age 30 with $40,000
+- Passionate about cooking and often shares food analogies in tech talks
+
+Want to know more about NVIDIA's technology or AI hardware?"""
+                else:
+                    return """I can help you learn about notable people in technology! Here are some areas I can discuss:
+
+**Tech Leaders & Entrepreneurs:**
+- Jensen Huang (NVIDIA CEO)
+- Elon Musk (Tesla, SpaceX)
+- Satya Nadella (Microsoft CEO)
+- Tim Cook (Apple CEO)
+- Mark Zuckerberg (Meta/Facebook)
+- Jeff Bezos (Amazon founder)
+
+**Programming Pioneers:**
+- Linus Torvalds (Linux creator)
+- Guido van Rossum (Python creator)
+- Brendan Eich (JavaScript creator)
+- Dennis Ritchie (C language creator)
+
+**AI Researchers:**
+- Geoffrey Hinton (Deep Learning pioneer)
+- Yann LeCun (CNN pioneer)
+- Andrew Ng (AI educator)
+- Fei-Fei Li (Computer Vision expert)
+
+Just ask "Who is [person's name]?" and I'll provide detailed information!"""
+
+            # Learning and Career Questions (check first to catch educational queries)
+            elif any(keyword in prompt_lower for keyword in ["learn", "tutorial", "beginner", "start", "career", "job", "how to learn", "getting started"]):
+                topic = ""
+                if "programming" in prompt_lower or "coding" in prompt_lower:
+                    topic = "programming"
+                elif "web development" in prompt_lower or "website" in prompt_lower:
+                    topic = "web development"
+                elif "data science" in prompt_lower or "data analyst" in prompt_lower:
+                    topic = "data science"
+                elif "ai" in prompt_lower or "machine learning" in prompt_lower:
+                    topic = "AI/ML"
+                
+                return f"""Great question about learning{f' {topic}' if topic else ''}! Here's a comprehensive learning path:
+
+**🎯 Getting Started:**
+• **Choose Your Path**: Web development, data science, AI/ML, mobile apps, or systems programming
+• **Pick a Language**: Python (beginner-friendly), JavaScript (web), or Rust (systems)
+• **Set Up Environment**: Install VS Code, Git, and your chosen language
+• **Practice Daily**: Consistency beats intensity
+
+**📚 Learning Resources:**
+- **Free**: freeCodeCamp, Codecademy, YouTube tutorials
+- **Interactive**: LeetCode, HackerRank for problem-solving
+- **Books**: "Python Crash Course", "Eloquent JavaScript"
+- **Projects**: Build real applications, not just tutorials
+
+**🛤️ Learning Path (Pick One):**
+
+**Web Development (3-6 months):**
+1. HTML, CSS, JavaScript fundamentals
+2. React or Vue.js for frontend
+3. Node.js/Express or Python/Django for backend
+4. Database basics (SQL/MongoDB)
+5. Deploy your first full-stack app
+
+**Data Science (4-8 months):**
+1. Python basics and data structures
+2. NumPy, Pandas for data manipulation
+3. Matplotlib, Seaborn for visualization
+4. Statistics and probability
+5. Machine learning with scikit-learn
+
+**💼 Career Tips:**
+- Build a portfolio with 3-5 projects
+- Contribute to open source
+- Network with developers online and locally
+- Practice coding interviews
+- Don't just learn - build and ship projects!
+
+What specific area interests you most? I can provide more targeted guidance!"""
+
+            # Programming and Development Questions
+            elif any(keyword in prompt_lower for keyword in ["neural network", "neural net", "machine learning", "ml", "deep learning"]) and not any(exclude in prompt_lower for exclude in ["who is", "person", "people"]):
+                return """Neural networks are computational models inspired by biological neural networks. They consist of:
+
+• **Neurons (Nodes)**: Basic processing units that receive inputs, apply weights, and produce outputs
+• **Layers**: Input layer, hidden layers, and output layer
+• **Weights & Biases**: Parameters that the network learns during training
+• **Activation Functions**: Functions like ReLU, Sigmoid, or Tanh that introduce non-linearity
+
+**Common Types:**
+- **Feedforward**: Data flows in one direction (e.g., basic MLPs)
+- **Convolutional (CNNs)**: Great for image processing
+- **Recurrent (RNNs/LSTMs)**: Handle sequential data like text or time series
+- **Transformers**: Modern architecture for language models (like me!)
+
+**Applications**: Image recognition, natural language processing, recommendation systems, autonomous vehicles, and much more!
+
+Would you like me to generate some neural network code examples?"""
+
+            elif (any(js_term in prompt_lower for js_term in ["javascript", "what is javascript", "js", "explain js"]) or 
+                  prompt_lower.strip() == "explain javascript") and not any(exclude in prompt_lower for exclude in ["python", "rust", "java ", "ai", "artificial intelligence", "who is", "learn", "tutorial", "career"]):
+                return """JavaScript is the language of the web! Here's what you need to know:
+
+**Core Concepts:**
+• **Dynamic typing**: Variables can hold any type
+• **First-class functions**: Functions are values
+• **Prototypal inheritance**: Objects can inherit directly from other objects
+• **Event-driven**: Perfect for interactive web applications
+
+**Modern JavaScript (ES6+):**
+- Arrow functions: `const add = (a, b) => a + b`
+- Template literals: `Hello ${name}!`
+- Destructuring: `const {x, y} = point`
+- Async/await for handling promises
+
+**Popular Frameworks & Libraries:**
+- **React**: Component-based UI library
+- **Vue.js**: Progressive framework
+- **Node.js**: Server-side JavaScript
+- **Express.js**: Web application framework
+
+**Career Paths:**
+- Frontend Developer (React, Vue, Angular)
+- Backend Developer (Node.js, Express)
+- Full-stack Developer
+- Mobile Developer (React Native)
+
+Want me to generate some JavaScript code? Try: `code javascript <your idea>`"""
+
+            elif (any(keyword in prompt_lower for keyword in ["python", "programming", "coding"]) and 
+                  not any(exclude in prompt_lower for exclude in ["javascript", "rust", "java", "learn", "tutorial", "career", "start"]) and
+                  not any(learn_check in prompt_lower for learn_check in ["how to", "tutorial", "beginner", "learn"])):
+                return """Python is an excellent choice for programming! Here's what makes it special:
+
+**Key Features:**
+• **Easy to learn**: Clean, readable syntax
+• **Versatile**: Web development, data science, AI, automation
+• **Huge ecosystem**: Rich libraries like NumPy, Pandas, TensorFlow
+• **Cross-platform**: Runs on Windows, macOS, Linux
+
+**Popular Use Cases:**
+- Data Science & Analytics (Pandas, NumPy, Matplotlib)
+- Web Development (Django, Flask, FastAPI)
+- Machine Learning (TensorFlow, PyTorch, scikit-learn)
+- Automation & Scripting
+- Desktop Applications (Tkinter, PyQt)
+
+**Getting Started Tips:**
+1. Learn basic syntax and data structures
+2. Practice with small projects
+3. Explore libraries relevant to your interests
+4. Join the Python community
+
+Try asking me to generate some Python code examples! Use: `code python <your idea>`"""
 
             elif any(keyword in prompt_lower for keyword in ["python", "programming", "coding"]) and not any(word in prompt_lower for word in ["javascript", "rust", "java"]):
                 return """Python is an excellent choice for programming! Here's what makes it special:
@@ -441,7 +609,9 @@ Try asking me to generate some Python code examples! Use: `code python <your ide
 
 Want to see some Rust code? Try: `code rust <your idea>`"""
 
-            elif any(keyword in prompt_lower for keyword in ["ai", "artificial intelligence", "chatgpt", "gpt"]):
+            elif (any(keyword in prompt_lower for keyword in ["ai", "artificial intelligence", "chatgpt", "gpt"]) and 
+                  not any(exclude in prompt_lower for exclude in ["javascript", "js", "web development"]) and
+                  any(ai_word in prompt_lower for ai_word in ["ai", "artificial", "intelligence", "chatgpt", "gpt", "machine learning", "deep learning"])):
                 return """Artificial Intelligence is revolutionizing technology! Here's an overview:
 
 **Types of AI:**
@@ -502,7 +672,7 @@ I can help you generate AI-related code! Try: `code python machine learning mode
 
 Want web development code? Try: `code javascript web server` or `code python flask app`"""
 
-            elif any(keyword in prompt_lower for keyword in ["database", "sql", "data"]):
+            elif any(keyword in prompt_lower for keyword in ["database", "sql", "data"]) and not any(exclude in prompt_lower for exclude in ["who is", "person"]):
                 return """Databases are crucial for storing and managing data! Here's what you need to know:
 
 **Types of Databases:**
