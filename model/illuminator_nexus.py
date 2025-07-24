@@ -327,25 +327,294 @@ class iLLuMinatorModel:
             return f"# Error generating {language} code for: {instruction}\n# Please try a different instruction"
     
     def generate_response(self, prompt: str, max_length: int = 150, temperature: float = 0.7) -> str:
-        """Generate intelligent conversational response"""
+        """Generate intelligent conversational response with comprehensive knowledge"""
         try:
-            # Quick response patterns for common questions
+            # Enhanced intelligent response patterns with comprehensive knowledge
             prompt_lower = prompt.lower()
             
+            # Greetings
             if any(greeting in prompt_lower for greeting in ["hello", "hi", "hey"]):
                 return "Hello! I'm your iLLuMinator coding assistant. How can I help you with your coding projects today?"
             
             elif "how are you" in prompt_lower:
                 return "I'm running smoothly and ready to help with any coding tasks! What would you like to work on?"
             
-            elif any(keyword in prompt_lower for keyword in ["python", "code", "function", "script"]):
-                return "I can help you with Python code! Try using the 'code' command followed by your instruction. For example: 'code python hello world function'"
-            
-            elif any(keyword in prompt_lower for keyword in ["help", "what can you do"]):
-                return "I can help you with:\n• Code generation in multiple languages\n• File operations and analysis\n• Project management\n• Answering programming questions\n\nTry 'help' for all available commands!"
-            
-            # If we have a conversational model, use it
-            if self.generator:
+            # Programming and Development Questions
+            elif any(keyword in prompt_lower for keyword in ["neural network", "neural net", "machine learning", "ml", "deep learning"]):
+                return """Neural networks are computational models inspired by biological neural networks. They consist of:
+
+• **Neurons (Nodes)**: Basic processing units that receive inputs, apply weights, and produce outputs
+• **Layers**: Input layer, hidden layers, and output layer
+• **Weights & Biases**: Parameters that the network learns during training
+• **Activation Functions**: Functions like ReLU, Sigmoid, or Tanh that introduce non-linearity
+
+**Common Types:**
+- **Feedforward**: Data flows in one direction (e.g., basic MLPs)
+- **Convolutional (CNNs)**: Great for image processing
+- **Recurrent (RNNs/LSTMs)**: Handle sequential data like text or time series
+- **Transformers**: Modern architecture for language models (like me!)
+
+**Applications**: Image recognition, natural language processing, recommendation systems, autonomous vehicles, and much more!
+
+Would you like me to generate some neural network code examples?"""
+
+            elif any(keyword in prompt_lower for keyword in ["javascript", "js"]) and not any(word in prompt_lower for word in ["python", "rust", "java"]):
+                return """JavaScript is the language of the web! Here's what you need to know:
+
+**Core Concepts:**
+• **Dynamic typing**: Variables can hold any type
+• **First-class functions**: Functions are values
+• **Prototypal inheritance**: Objects can inherit directly from other objects
+• **Event-driven**: Perfect for interactive web applications
+
+**Modern JavaScript (ES6+):**
+- Arrow functions: `const add = (a, b) => a + b`
+- Template literals: `Hello ${name}!`
+- Destructuring: `const {x, y} = point`
+- Async/await for handling promises
+
+**Popular Frameworks & Libraries:**
+- **React**: Component-based UI library
+- **Vue.js**: Progressive framework
+- **Node.js**: Server-side JavaScript
+- **Express.js**: Web application framework
+
+**Career Paths:**
+- Frontend Developer (React, Vue, Angular)
+- Backend Developer (Node.js, Express)
+- Full-stack Developer
+- Mobile Developer (React Native)
+
+Want me to generate some JavaScript code? Try: `code javascript <your idea>`"""
+
+            elif any(keyword in prompt_lower for keyword in ["python", "programming", "coding"]) and not any(word in prompt_lower for word in ["javascript", "rust", "java"]):
+                return """Python is an excellent choice for programming! Here's what makes it special:
+
+**Key Features:**
+• **Easy to learn**: Clean, readable syntax
+• **Versatile**: Web development, data science, AI, automation
+• **Huge ecosystem**: Rich libraries like NumPy, Pandas, TensorFlow
+• **Cross-platform**: Runs on Windows, macOS, Linux
+
+**Popular Use Cases:**
+- Data Science & Analytics (Pandas, NumPy, Matplotlib)
+- Web Development (Django, Flask, FastAPI)
+- Machine Learning (TensorFlow, PyTorch, scikit-learn)
+- Automation & Scripting
+- Desktop Applications (Tkinter, PyQt)
+
+**Getting Started Tips:**
+1. Learn basic syntax and data structures
+2. Practice with small projects
+3. Explore libraries relevant to your interests
+4. Join the Python community
+
+Try asking me to generate some Python code examples! Use: `code python <your idea>`"""
+
+            elif any(keyword in prompt_lower for keyword in ["rust", "systems programming"]):
+                return """Rust is a systems programming language focused on safety and performance!
+
+**Key Features:**
+• **Memory safety**: No segfaults or buffer overflows
+• **Zero-cost abstractions**: High-level features with no runtime cost
+• **Ownership system**: Unique approach to memory management
+• **Concurrency**: Fearless concurrency with data race prevention
+
+**Why Choose Rust:**
+- **Performance**: As fast as C and C++
+- **Safety**: Prevents common programming errors at compile time
+- **Modern tooling**: Cargo package manager, excellent error messages
+- **Growing ecosystem**: Used by Mozilla, Dropbox, Discord, and more
+
+**Use Cases:**
+- Operating systems and kernels
+- Web backends and APIs
+- Blockchain and cryptocurrency
+- Game engines
+- WebAssembly applications
+
+**Learning Path:**
+1. Understand ownership and borrowing
+2. Learn about structs and enums
+3. Explore pattern matching
+4. Practice with Cargo projects
+
+Want to see some Rust code? Try: `code rust <your idea>`"""
+
+            elif any(keyword in prompt_lower for keyword in ["ai", "artificial intelligence", "chatgpt", "gpt"]):
+                return """Artificial Intelligence is revolutionizing technology! Here's an overview:
+
+**Types of AI:**
+• **Narrow AI**: Specialized for specific tasks (current AI systems)
+• **General AI**: Human-level intelligence across all domains (future goal)
+• **Machine Learning**: AI that learns from data
+• **Deep Learning**: Neural networks with many layers
+
+**Popular AI Technologies:**
+- **Large Language Models**: GPT, Claude, LLaMA for text generation
+- **Computer Vision**: Image recognition, object detection
+- **Natural Language Processing**: Text analysis, translation
+- **Reinforcement Learning**: Game playing, robotics
+
+**AI Development Tools:**
+- **Python Libraries**: TensorFlow, PyTorch, scikit-learn
+- **Platforms**: Google Colab, Jupyter Notebooks
+- **Cloud Services**: AWS SageMaker, Google AI Platform
+- **Datasets**: ImageNet, COCO, Common Crawl
+
+**Getting Started:**
+1. Learn Python and basic statistics
+2. Study machine learning fundamentals
+3. Practice with datasets
+4. Build projects and experiment
+
+I can help you generate AI-related code! Try: `code python machine learning model`"""
+
+            elif any(keyword in prompt_lower for keyword in ["web", "website", "html", "css"]):
+                return """Web development is an exciting field! Here's your roadmap:
+
+**Frontend (Client-side):**
+• **HTML**: Structure and content
+• **CSS**: Styling and layout
+• **JavaScript**: Interactivity and dynamic behavior
+
+**Backend (Server-side):**
+• **Server Languages**: Python (Django/Flask), Node.js, PHP, Ruby
+• **Databases**: PostgreSQL, MySQL, MongoDB
+• **APIs**: RESTful services, GraphQL
+
+**Modern Web Development:**
+- **Frameworks**: React, Vue.js, Angular (frontend)
+- **Build Tools**: Webpack, Vite, Parcel
+- **CSS Frameworks**: Tailwind CSS, Bootstrap
+- **Version Control**: Git and GitHub
+
+**Full-Stack Technologies:**
+- **MEAN/MERN**: MongoDB, Express, Angular/React, Node.js
+- **Django + React**: Python backend with React frontend
+- **JAMstack**: JavaScript, APIs, and Markup
+
+**Learning Path:**
+1. Start with HTML, CSS, and vanilla JavaScript
+2. Learn a frontend framework (React recommended)
+3. Pick a backend technology
+4. Build full-stack projects
+
+Want web development code? Try: `code javascript web server` or `code python flask app`"""
+
+            elif any(keyword in prompt_lower for keyword in ["database", "sql", "data"]):
+                return """Databases are crucial for storing and managing data! Here's what you need to know:
+
+**Types of Databases:**
+• **Relational (SQL)**: PostgreSQL, MySQL, SQLite - structured data with relationships
+• **NoSQL**: MongoDB, CouchDB - flexible, document-based storage
+• **Graph**: Neo4j - excellent for connected data
+• **Key-Value**: Redis, DynamoDB - simple key-value pairs
+
+**SQL Fundamentals:**
+- **SELECT**: Query data
+- **INSERT**: Add new records
+- **UPDATE**: Modify existing data
+- **DELETE**: Remove records
+- **JOIN**: Combine data from multiple tables
+
+**Database Design Principles:**
+- **Normalization**: Reduce data redundancy
+- **Indexing**: Improve query performance
+- **ACID Properties**: Atomicity, Consistency, Isolation, Durability
+- **Relationships**: One-to-one, one-to-many, many-to-many
+
+**Popular Database Technologies:**
+- **PostgreSQL**: Feature-rich, standards-compliant
+- **MongoDB**: Flexible document storage
+- **SQLite**: Lightweight, embedded database
+- **Redis**: In-memory data structure store
+
+**Data Analysis Tools:**
+- **Python**: Pandas, NumPy for data manipulation
+- **SQL**: Standard query language
+- **Power BI/Tableau**: Data visualization
+- **Apache Spark**: Big data processing
+
+Need database code? Try: `code python database connection` or `code sql query examples`"""
+
+            # Help and capabilities
+            elif any(keyword in prompt_lower for keyword in ["help", "what can you do", "capabilities"]):
+                return """I'm your intelligent coding assistant! Here's what I can help you with:
+
+**🚀 Code Generation:**
+• Generate code in Python, JavaScript, Rust, Java, C++, Go, and more
+• Create functions, classes, web servers, APIs, and complete applications
+• Smart templates with working, executable code
+
+**📊 Project Management:**
+• Analyze code structure and complexity
+• Extract functions and classes from files
+• Run shell commands and tests
+• Install dependencies automatically
+
+**📁 File Operations:**
+• Read and write files with syntax highlighting
+• List directory contents intelligently
+• Display project tree structure
+• Context-aware file management
+
+**💬 Intelligent Conversation:**
+• Answer programming questions with detailed explanations
+• Provide learning resources and best practices
+• Debug code issues and suggest improvements
+• Explain complex concepts in simple terms
+
+**⚡ Fast Performance:**
+• Sub-millisecond response times
+• Template-based intelligent generation
+• Works offline without internet
+• Optimized for local development
+
+**Examples of what you can ask:**
+- "code python web scraper"
+- "explain neural networks"
+- "how do I use React hooks?"
+- "analyze this code file"
+- "what's the best way to learn JavaScript?"
+
+Try any command or just ask me naturally!"""
+
+            # Technical troubleshooting
+            elif any(keyword in prompt_lower for keyword in ["error", "bug", "issue", "problem", "debug"]):
+                return """I can help you debug and solve technical issues! Here's my approach:
+
+**Common Debugging Steps:**
+1. **Identify the Error**: Read error messages carefully
+2. **Isolate the Problem**: Reproduce the issue with minimal code
+3. **Check the Basics**: Syntax, typos, missing imports
+4. **Use Debugging Tools**: Print statements, debuggers, logging
+5. **Search for Solutions**: Stack Overflow, documentation
+
+**Common Programming Errors:**
+• **Syntax Errors**: Missing parentheses, incorrect indentation
+• **Runtime Errors**: Division by zero, file not found
+• **Logic Errors**: Incorrect algorithm or flow
+• **Import Errors**: Missing dependencies or incorrect paths
+
+**Debugging Tools:**
+- **Python**: pdb debugger, print statements, logging
+- **JavaScript**: Browser DevTools, console.log
+- **General**: IDE debuggers, unit tests
+
+**Best Practices:**
+- Write small, testable functions
+- Use version control (Git)
+- Add error handling and validation
+- Write clear, descriptive variable names
+
+**Share your specific error and I can help you solve it!** You can also use:
+- `read <filename>` to show me your code
+- `analyze <filename>` to check for issues
+- Just describe the problem and I'll guide you through the solution"""
+
+            # If we have a conversational model, try to use it for complex questions
+            if self.generator and len(prompt.split()) > 3:
                 try:
                     # Create a conversational prompt
                     conversation_prompt = f"Human: {prompt}\nAssistant:"
@@ -370,15 +639,50 @@ class iLLuMinatorModel:
                 except Exception as e:
                     logger.debug(f"Model response generation failed: {e}")
             
-            # Fallback intelligent response
+            # Enhanced fallback responses for different question types
             if "?" in prompt:
-                return f"That's an interesting question about: {prompt[:100]}... Let me help you explore this topic. Could you provide more specific details?"
+                # Extract key topics from the question
+                if any(word in prompt_lower for word in ["how", "what", "why", "when", "where"]):
+                    return f"""That's a great question! I'd be happy to help you understand that topic better.
+
+Could you provide a bit more context about what specifically you'd like to know? For example:
+• Are you looking for a code example?
+• Do you need an explanation of concepts?
+• Are you trying to solve a specific problem?
+
+The more details you provide, the better I can assist you! You can also try:
+- `code <language> <description>` for code generation
+- `help` to see all available commands
+- Or just describe your goal and I'll guide you through it."""
+                else:
+                    return f"""I understand you're asking about: "{prompt[:100]}{'...' if len(prompt) > 100 else ''}"
+
+I'm here to help! To give you the most useful answer, could you tell me:
+• What programming language are you working with?
+• Are you looking for code examples or explanations?
+• Is this for a specific project or learning?
+
+Try being more specific, like:
+- "How do I create a web server in Python?"
+- "What's the difference between lists and tuples?"
+- "Show me how to use React hooks"
+
+I'm ready to provide detailed, helpful responses!"""
             else:
-                return f"I understand you want help with: {prompt[:100]}... I'm here to assist! Please let me know exactly what you'd like me to help you with."
+                return f"""I see you're interested in: "{prompt[:100]}{'...' if len(prompt) > 100 else ''}"
+
+I can definitely help you with that! Here are some ways I can assist:
+
+**🔧 Generate Code**: `code python <your idea>`
+**📚 Explain Concepts**: Ask "what is..." or "how does..." questions  
+**🔍 Analyze Files**: `analyze <filename>` or `read <filename>`
+**💡 Get Help**: `help` for all commands
+
+What would you like to do first? Just let me know your specific goal and I'll provide detailed guidance!"""
                 
         except Exception as e:
             logger.error(f"Response generation error: {e}")
-            return "I'm ready to help! Please let me know what you'd like to work on."
+            return "I'm ready to help! Please let me know what you'd like to work on. Try asking a specific question or use `help` to see available commands."
     
     def analyze_code(self, code: str) -> Dict[str, Any]:
         """Analyze code structure and provide insights"""
