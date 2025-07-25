@@ -1,4 +1,4 @@
-# 🚀 Enhanced Nexus CLI - Advanced Code Intelligence
+# Enhanced Nexus CLI - Advanced Code Intelligence
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-red.svg)](https://pytorch.org/)
@@ -7,35 +7,35 @@
 
 An advanced AI-powered CLI tool that integrates state-of-the-art language model architectures for intelligent code assistance, web search, and conversational AI. Built with proven optimizations from [LLMs-from-scratch](https://github.com/rasbt/LLMs-from-scratch) and [nanoGPT](https://github.com/karpathy/nanoGPT).
 
-## ✨ Key Features
+## Key Features
 
-### 🧠 Advanced LLM Architecture
+### Advanced LLM Architecture
 - **FlashAttention**: 8x memory efficiency for long sequences
 - **KV-Cache**: 4x faster autoregressive generation 
 - **torch.compile**: 2x inference speedup
 - **Mixed Precision**: Optimized memory usage
 - **Distributed Training**: Multi-GPU support
 
-### 🌐 Web Intelligence
+### Web Intelligence
 - Real-time web search integration
 - Smart context gathering
 - Information synthesis
 - Cached results for performance
 
-### 💻 Code Intelligence  
+### Code Intelligence  
 - Advanced code analysis and understanding
 - Multi-language support (Python, JS, Java, C++, etc.)
 - Function and class extraction
 - Complexity estimation
 - Smart suggestions and debugging
 
-### 🔄 Session Management
+### Session Management
 - Persistent conversation history
 - Context-aware responses
 - File tracking and analysis
 - Performance monitoring
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -72,7 +72,7 @@ python nexus.py "Explain how transformers work"
 python nexus.py --file mycode.py "Analyze this code for optimization opportunities"
 ```
 
-## 📚 Architecture Overview
+## Architecture Overview
 
 ### Enhanced LLM Core (`model/nexus_llm.py`)
 
@@ -151,7 +151,7 @@ FLASH_ATTENTION=true
 KV_CACHE=true
 ```
 
-## 🏋️ Training Your Own Model
+## Training Your Own Model
 
 ### Data Preparation
 
@@ -192,7 +192,7 @@ torchrun --nproc_per_node=4 train_nexus.py
 }
 ```
 
-## 📊 Performance Benchmarks
+## Performance Benchmarks
 
 ### Speed Improvements
 - **FlashAttention**: 8x memory efficiency
@@ -210,14 +210,14 @@ torchrun --nproc_per_node=4 train_nexus.py
 - **GPU inference**: ~500 tokens/second  
 - **Multi-GPU training**: Linear scaling
 
-## 🎯 Usage Examples
+## Usage Examples
 
 ### Code Analysis
 
 ```bash
-💭 You: Analyze this Python function for performance issues
+You: Analyze this Python function for performance issues
 
-🤖 Nexus: I'll analyze your code for potential optimizations:
+Nexus: I'll analyze your code for potential optimizations:
 
 1. **Time Complexity**: The nested loops create O(n²) complexity
 2. **Memory Usage**: Unnecessary list comprehensions 
@@ -226,15 +226,15 @@ torchrun --nproc_per_node=4 train_nexus.py
    - Consider caching repeated calculations
    - Profile with cProfile for bottlenecks
 
-💡 Tip: I can help you implement these optimizations!
+Tip: I can help you implement these optimizations!
 ```
 
 ### Web Intelligence
 
 ```bash
-💭 You: What are the latest developments in transformer architectures?
+You: What are the latest developments in transformer architectures?
 
-🤖 Nexus: Based on recent research:
+Nexus: Based on recent research:
 
 **Latest Developments:**
 1. **FlashAttention-2**: 2x faster than FlashAttention-1
@@ -251,9 +251,9 @@ torchrun --nproc_per_node=4 train_nexus.py
 ### Interactive Development
 
 ```bash
-💭 You: Help me implement a binary search algorithm
+You: Help me implement a binary search algorithm
 
-🤖 Nexus: I'll help you implement an efficient binary search:
+Nexus: I'll help you implement an efficient binary search:
 
 ```python
 def binary_search(arr, target):
@@ -285,10 +285,10 @@ result = binary_search(numbers, 7)  # Returns 3
 - Early termination on exact match
 - Clear variable naming for readability
 
-💡 Tip: I can also help you with iterative vs recursive versions!
+Tip: I can also help you with iterative vs recursive versions!
 ```
 
-## 🛠️ Advanced Features
+## Advanced Features
 
 ### Custom Model Integration
 
@@ -335,7 +335,7 @@ print(f"Model parameters: {stats['model_params']:,}")
 print(f"Cache hit rate: {stats['cache_hits']/stats['total_requests']:.1%}")
 ```
 
-## 🧪 Development
+## Development
 
 ### Project Structure
 
@@ -380,7 +380,7 @@ pytest tests/
 python benchmarks/run_benchmarks.py
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. **Fork the repository**
 2. **Create feature branch**: `git checkout -b feature/amazing-feature`
@@ -397,7 +397,7 @@ python benchmarks/run_benchmarks.py
 - Write unit tests for new features
 - Update documentation as needed
 
-## 📈 Roadmap
+## Roadmap
 
 ### Near-term (v2.0)
 - [ ] Multi-modal support (images, audio)
@@ -413,7 +413,7 @@ python benchmarks/run_benchmarks.py
 - [ ] Custom fine-tuning GUI
 - [ ] Mobile app integration
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -445,11 +445,11 @@ export FLASH_ATTENTION=true
 4. **Batch queries**: Better throughput
 5. **Cache results**: Avoid redundant computation
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Sebastian Raschka** - [LLMs-from-scratch](https://github.com/rasbt/LLMs-from-scratch) for educational foundation
 - **Andrej Karpathy** - [nanoGPT](https://github.com/karpathy/nanoGPT) for production patterns
@@ -457,12 +457,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **HuggingFace** - Transformers library and model hub
 - **PyTorch Team** - Exceptional deep learning framework
 
-## 📞 Support
+## Support
 
 - **Documentation**: [Wiki](../../wiki)
 - **Issues**: [GitHub Issues](../../issues)
 - **Discussions**: [GitHub Discussions](../../discussions)
-- **Email**: support@nexus-cli.com
+- **Email**: anipaleja@gmail.com
 
 ---
 
