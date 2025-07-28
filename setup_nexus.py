@@ -54,7 +54,7 @@ class NexusSetup:
         
         # Check for Apple Silicon optimizations
         if self.system == "Darwin" and "arm" in self.architecture.lower():
-            logger.info("✓ Apple Silicon detected - will use optimized PyTorch")
+            logger.info("Apple Silicon detected - will use optimized PyTorch")
         
         logger.info("No GPU detected - will use CPU mode")
         return True
@@ -216,7 +216,7 @@ LOG_FILE=logs/nexus.log
 
 cd "{self.project_root}"
 
-echo "🚀 Starting Nexus CLI..."
+echo "Starting Nexus CLI..."
 echo "Python version: $(python3 --version)"
 echo "Working directory: $(pwd)"
 echo ""
@@ -229,7 +229,7 @@ fi
 
 # Check if model is available
 if [ ! -f "model/nexus_model/model.pt" ]; then
-    echo "⚠️  No trained model found. Run 'python train_nexus.py --data your_data.txt' first."
+    echo "No trained model found. Run 'python train_nexus.py --data your_data.txt' first."
 fi
 
 # Start the CLI
@@ -240,7 +240,7 @@ python nexus.py --interactive
             with open(script_path, 'w') as f:
                 f.write(startup_script)
             script_path.chmod(0o755)
-            logger.info("✓ Created Unix startup script")
+            logger.info("Created Unix startup script")
         
         # Windows batch script
         if self.system == "Windows":
@@ -249,7 +249,7 @@ REM Nexus CLI Startup Script
 
 cd /d "{self.project_root}"
 
-echo 🚀 Starting Nexus CLI...
+echo Starting Nexus CLI...
 echo Python version:
 python --version
 echo Working directory: %cd%
@@ -263,7 +263,7 @@ if exist "venv\\Scripts\\activate.bat" (
 
 REM Check if model is available
 if not exist "model\\nexus_model\\model.pt" (
-    echo ⚠️  No trained model found. Run 'python train_nexus.py --data your_data.txt' first.
+    echo No trained model found. Run 'python train_nexus.py --data your_data.txt' first.
 )
 
 REM Start the CLI
@@ -312,10 +312,10 @@ pause
     def print_success_message(self):
         """Print success message with usage instructions"""
         print("\n" + "="*60)
-        print("🎉 NEXUS CLI SETUP COMPLETE!")
+        print("NEXUS CLI SETUP COMPLETE!")
         print("="*60)
         print()
-        print("🚀 Quick Start:")
+        print("Quick Start:")
         
         if self.system in ["Linux", "Darwin"]:
             print("   ./start_nexus.sh")
@@ -325,15 +325,15 @@ pause
         print("   OR")
         print("   python nexus.py --interactive")
         print()
-        print("📚 Documentation:")
+        print("Documentation:")
         print("   - README.md for detailed usage")
         print("   - model_config.json for model settings")
         print("   - .env.example for environment configuration")
         print()
-        print("🔧 Training your own model:")
+        print("Training your own model:")
         print("   python train_nexus.py --data your_training_data.txt")
         print()
-        print("📊 Performance Tips:")
+        print("Performance Tips:")
         print("   - Use CUDA GPU for 10x faster inference")
         print("   - Enable torch.compile for 2x speedup")
         print("   - Use FlashAttention for memory efficiency")

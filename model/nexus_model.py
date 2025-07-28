@@ -31,7 +31,7 @@ class NexusModel:
         """Initialize the Nexus model with local fine-tuned model in fast mode."""
         logger.info("Initializing Nexus model with local fine-tuned model...")
         if fast_mode:
-            logger.info("🚀 Fast mode enabled - using optimized local inference")
+            logger.info("Fast mode enabled - using optimized local inference")
         
         try:
             # Initialize the local fine-tuned model with fast mode

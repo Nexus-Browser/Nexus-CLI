@@ -12,13 +12,13 @@ from pathlib import Path
 
 def run_command(command, description):
     """Run a command and handle errors."""
-    print(f"🔄 {description}...")
+    print(f"{description}...")
     try:
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
         print(f" {description} completed successfully")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ {description} failed: {e}")
+        print(f"{description} failed: {e}")
         print(f"Error output: {e.stderr}")
         return False
 
@@ -26,7 +26,7 @@ def check_python_version():
     """Check if Python version is compatible."""
     version = sys.version_info
     if version.major < 3 or (version.major == 3 and version.minor < 8):
-        print("❌ Python 3.8 or higher is required")
+        print("Python 3.8 or higher is required")
         return False
     print(f" Python {version.major}.{version.minor}.{version.micro} detected")
     return True
@@ -102,7 +102,7 @@ def train_basic_model():
 
 def test_cli():
     """Test the CLI with a simple command."""
-    print("🧪 Testing CLI...")
+    print("Testing CLI...")
     test_command = 'echo "code create a hello world function" | python nexus_cli.py --debug'
     return run_command(test_command, "Testing CLI")
 
@@ -120,7 +120,7 @@ def main():
     
     # Install dependencies
     if not install_dependencies():
-        print("❌ Failed to install dependencies. Please check your internet connection and try again.")
+        print("Failed to install dependencies. Please check your internet connection and try again.")
         sys.exit(1)
     
     # Create sample data
@@ -134,7 +134,7 @@ def main():
     test_cli()
     
     print("\n Setup completed!")
-    print("\n📖 Next steps:")
+    print("\nNext steps:")
     print("1. Run the CLI: python nexus_cli.py")
     print("2. Try some commands:")
     print("   - code create a function to calculate fibonacci numbers")

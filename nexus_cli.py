@@ -180,7 +180,7 @@ class IntelligentNexusCLI:
         help_text = """
 [bold]Available Commands:[/bold]
 
-[cyan]🌐 AI & Web Intelligence:[/cyan]
+[cyan] AI & Web Intelligence:[/cyan]
   • [code]ask <question>[/code] - Ask any question with web-enhanced intelligence
   • [code]search <query>[/code] - Direct web search with intelligent synthesis
   • Just type any question naturally - I'll understand!
@@ -219,10 +219,10 @@ class IntelligentNexusCLI:
   • [code]exit[/code] - Exit Nexus CLI
   • [code]status[/code] - Check iLLuMinator API status
 
-[dim]🧠 Powered by iLLuMinator-4.7B with Web Intelligence![/dim]
-[dim]🌐 Now with comprehensive web search across Stack Overflow, GitHub, NPM, PyPI, Documentation, and more![/dim]
+[dim]Powered by iLLuMinator-4.7B with Web Intelligence![/dim]
+[dim]Now with comprehensive web search across Stack Overflow, GitHub, NPM, PyPI, Documentation, and more![/dim]
 [dim]Repository: https://github.com/Anipaleja/iLLuMinator-4.7B[/dim]
-[dim]💡 Examples: "How to use React hooks?", "Python asyncio tutorial", "Best practices for Docker"[/dim]
+[dim]Examples: "How to use React hooks?", "Python asyncio tutorial", "Best practices for Docker"[/dim]
 [dim]Smart Features: Web search integration, context awareness, command suggestions, intelligent error handling[/dim]
 """
         self.console.print(Panel(help_text, title="[bold]Nexus CLI Help[/bold]", border_style="cyan"))

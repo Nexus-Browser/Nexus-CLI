@@ -1,6 +1,6 @@
 {
   "model": {
-    "name": "deepseek-ai/deepseek-coder-6.7b-base",
+    "name": "anipal/illuminator-4.7b",
     "type": "local",
     "device": "auto",
     "max_length": 1024,

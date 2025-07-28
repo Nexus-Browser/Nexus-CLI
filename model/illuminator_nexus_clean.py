@@ -41,7 +41,7 @@ except ImportError:
 @dataclass
 class ModelConfig:
     """Configuration for the iLLuMinator model"""
-    model_name: str = "microsoft/DialoGPT-medium"  # Fast, lightweight model
+    model_name: str = "anipal/illuminator-4.7b"  # iLLuMinator model
     device: str = "auto"
     max_length: int = 512
     temperature: float = 0.7
@@ -174,7 +174,7 @@ class iLLuMinatorModel:
                 self.is_loaded = True
                 return
             
-            # Try to load a fast, lightweight model
+            # Backup:Try to load a fast, lightweight model
             model_options = [
                 "microsoft/DialoGPT-medium",  # Good for conversation
                 "gpt2",  # Fast and reliable

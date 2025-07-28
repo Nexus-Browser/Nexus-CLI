@@ -275,7 +275,7 @@ class NexusCLI:
             'model_calls': 0
         }
         
-        logger.info("✓ Nexus CLI initialized with enhanced architecture")
+        logger.info("Nexus CLI initialized with enhanced architecture")
     
     def _load_config(self) -> NexusConfig:
         """Load model configuration"""
@@ -570,7 +570,7 @@ Please let me know what specific assistance you need, and I'll do my best to hel
         
         # Add helpful suggestions based on intent
         if intent['type'] == 'code':
-            enhanced += "\n\n💡 Tip: I can help you debug, optimize, or explain this code further if needed."
+            enhanced += "\n\nTip: I can help you debug, optimize, or explain this code further if needed."
         
         return enhanced
     
@@ -630,7 +630,7 @@ async def main():
     if TORCH_AVAILABLE:
         cli.initialize_model()
     else:
-        print("⚠️  Running without PyTorch - limited functionality available")
+        print("Running without PyTorch - limited functionality available")
     
     # Add file to context if specified
     if args.file:
@@ -640,32 +640,32 @@ async def main():
     if args.query:
         query = ' '.join(args.query)
         result = await cli.process_query(query)
-        print(f"\n🤖 Nexus: {result['response']}\n")
+        print(f"\nNexus: {result['response']}\n")
         
         if 'performance' in result:
             print(f"⚡ Response time: {result['performance']['response_time']:.2f}s")
     
     elif args.interactive:
-        print("🚀 Nexus CLI - Enhanced Code Intelligence")
+        print("Nexus CLI - Enhanced Code Intelligence")
         print("Type 'exit' to quit, 'stats' for performance info, 'help' for commands\n")
         
         # Setup signal handlers for graceful shutdown
         def signal_handler(signum, frame):
-            print("\n👋 Goodbye!")
+            print("\nGoodbye!")
             sys.exit(0)
         
         signal.signal(signal.SIGINT, signal_handler)
         
         while True:
             try:
-                query = input("💭 You: ").strip()
+                query = input("You: ").strip()
                 
                 if query.lower() in ['exit', 'quit', 'q']:
-                    print("👋 Goodbye!")
+                    print("Goodbye!")
                     break
                 elif query.lower() == 'stats':
                     stats = cli.get_stats()
-                    print(f"\n📊 Performance Stats:")
+                    print(f"\nPerformance Stats:")
                     for key, value in stats.items():
                         print(f"  {key}: {value}")
                     print()
@@ -688,17 +688,17 @@ async def main():
                     continue
                 
                 result = await cli.process_query(query)
-                print(f"\n🤖 Nexus: {result['response']}")
+                print(f"\nNexus: {result['response']}")
                 
                 if result.get('performance'):
-                    print(f"⚡ {result['performance']['response_time']:.2f}s")
+                    print(f"{result['performance']['response_time']:.2f}s")
                 print()
                 
             except KeyboardInterrupt:
-                print("\n👋 Goodbye!")
+                print("\nGoodbye!")
                 break
             except Exception as e:
-                print(f"❌ Error: {e}")
+                print(f"Error: {e}")
     
     else:
         parser.print_help()
