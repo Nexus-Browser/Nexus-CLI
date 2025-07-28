@@ -1,4 +1,4 @@
-# Enhanced Nexus CLI - Advanced Code Intelligence
+# Nexus CLI - Advanced Code Intelligence
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-red.svg)](https://pytorch.org/)
@@ -6,6 +6,8 @@
 [![Performance](https://img.shields.io/badge/performance-8x%20faster-brightgreen.svg)](#performance)
 
 An advanced AI-powered CLI tool that integrates state-of-the-art language model architectures for intelligent code assistance, web search, and conversational AI. Built with proven optimizations from [LLMs-from-scratch](https://github.com/rasbt/LLMs-from-scratch) and [nanoGPT](https://github.com/karpathy/nanoGPT).
+
+<img width="1181" height="788" alt="Nexus-UI" src="https://github.com/user-attachments/assets/c03a9aa6-98ca-490f-acae-296a4f8daa16" />
 
 ## Key Features
 
@@ -113,7 +115,7 @@ model = NexusLLM(config)
    - Distributed data parallel
    - Learning rate scheduling
 
-## 🔧 Configuration
+## Configuration
 
 ### Model Configuration (`model_config.json`)
 
