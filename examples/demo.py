@@ -51,7 +51,7 @@ def add_numbers(a, b):
     
     try:
         # Test file reading
-        print(f"\n📖 Reading file: {temp_file}")
+        print(f"\nReading file: {temp_file}")
         response = cli._handle_read_file([temp_file])
         print(f" {response}")
         
@@ -118,7 +118,7 @@ def is_prime(n):
         print(f" {response}")
         
         # Test function extraction
-        print(f"\n📋 Extracting functions from: {temp_file}")
+        print(f"\nExtracting functions from: {temp_file}")
         response = cli._handle_extract_functions([temp_file])
         print(f" {response}")
         
@@ -140,18 +140,18 @@ def demo_project_management():
     cli = NexusCLI()
     
     # Test project structure
-    print("\n📂 Project structure:")
+    print("\nProject structure:")
     response = cli._handle_project_tree([])
     print(f" {response}")
     
     # Test file listing
-    print("\n📋 File listing:")
+    print("\nFile listing:")
     response = cli._handle_list_files([])
     print(f" {response}")
 
 def demo_natural_language():
     """Demonstrate natural language processing."""
-    print("\n💬 Demo: Natural Language Processing")
+    print("\nDemo: Natural Language Processing")
     print("-" * 40)
     
     cli = NexusCLI()
