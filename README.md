@@ -143,7 +143,7 @@ model = NexusLLM(config)
 NEXUS_MODEL_PATH=model/nexus_model
 NEXUS_DEVICE=auto
 
-# API Keys (optional)
+# API Keys (optional in case model us unavailable)
 OPENAI_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
 
@@ -247,7 +247,7 @@ Nexus: Based on recent research:
 - "FlashAttention-2: Faster Attention with Better Parallelism"
 - "LongNet: Scaling Transformers to 1,000,000,000 Tokens"
 
-⚡ Response time: 1.2s
+Response time: 1.2s
 ```
 
 ### Interactive Development
